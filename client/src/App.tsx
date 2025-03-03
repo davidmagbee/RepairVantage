@@ -18,6 +18,9 @@ import NotFound from './pages/NotFound';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 
+// Auth Provider
+import { AuthProvider } from './context/AuthContext';
+
 // Create HTTP link
 const httpLink = createHttpLink({
   uri: 'http://localhost:4000/graphql',
@@ -45,21 +48,23 @@ const client = new ApolloClient({
 function App() {
   return (
     <ApolloProvider client={client}>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Layout />}>
-            <Route index element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="projects" element={<PrivateRoute><Projects /></PrivateRoute>} />
-            <Route path="projects/:id" element={<PrivateRoute><ProjectDetails /></PrivateRoute>} />
-            <Route path="tasks" element={<PrivateRoute><Tasks /></PrivateRoute>} />
-            <Route path="inventory" element={<PrivateRoute><Inventory /></PrivateRoute>} />
-            <Route path="calendar" element={<PrivateRoute><Calendar /></PrivateRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<Layout />}>
+              <Route index element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="projects" element={<PrivateRoute><Projects /></PrivateRoute>} />
+              <Route path="projects/:id" element={<PrivateRoute><ProjectDetails /></PrivateRoute>} />
+              <Route path="tasks" element={<PrivateRoute><Tasks /></PrivateRoute>} />
+              <Route path="inventory" element={<PrivateRoute><Inventory /></PrivateRoute>} />
+              <Route path="calendar" element={<PrivateRoute><Calendar /></PrivateRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </Router>
+      </AuthProvider>
     </ApolloProvider>
   );
 }
