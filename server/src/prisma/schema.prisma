@@ -1,0 +1,207 @@
+// This is the Prisma schema file for RepairVantage
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  password       String
+  name           String
+  role           Role      @default(USER)
+  profilePicture String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  projects       Project[]
+  tasks          Task[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Project {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      ProjectStatus  @default(PLANNED)
+  priority    Priority       @default(MEDIUM)
+  notes       String?
+  budget      Float?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  tasks       Task[]
+  parts       PartProject[]
+  tools       ToolProject[]
+  events      CalendarEvent[]
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+}
+
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Task {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  estimatedHours Float?
+  actualHours    Float?
+  status         TaskStatus   @default(TODO)
+  startDate      DateTime?
+  dueDate        DateTime?
+  completedDate  DateTime?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  projectId      String
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id])
+  parts          PartTask[]
+  tools          ToolTask[]
+  dependencies   Dependency[] @relation("DependentTasks")
+  dependsOn      Dependency[] @relation("DependencyTasks")
+  events         CalendarEvent[]
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  BLOCKED
+}
+
+model Part {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  price       Float?
+  url         String?
+  notes       String?
+  imageUrl    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  projects    PartProject[]
+  tasks       PartTask[]
+  dependencies Dependency[] @relation("RequiredParts")
+  requiredFor  Dependency[] @relation("DependentParts")
+}
+
+model PartProject {
+  partId      String
+  projectId   String
+  quantity    Int       @default(1)
+  assignedAt  DateTime  @default(now())
+  part        Part      @relation(fields: [partId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([partId, projectId])
+}
+
+model PartTask {
+  partId      String
+  taskId      String
+  quantity    Int       @default(1)
+  assignedAt  DateTime  @default(now())
+  part        Part      @relation(fields: [partId], references: [id], onDelete: Cascade)
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([partId, taskId])
+}
+
+model Tool {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  price       Float?
+  url         String?
+  notes       String?
+  imageUrl    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  projects    ToolProject[]
+  tasks       ToolTask[]
+  dependencies Dependency[] @relation("RequiredTools")
+}
+
+model ToolProject {
+  toolId      String
+  projectId   String
+  quantity    Int       @default(1)
+  assignedAt  DateTime  @default(now())
+  tool        Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([toolId, projectId])
+}
+
+model ToolTask {
+  toolId      String
+  taskId      String
+  quantity    Int       @default(1)
+  assignedAt  DateTime  @default(now())
+  tool        Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([toolId, taskId])
+}
+
+model Dependency {
+  id            String  @id @default(uuid())
+  // Task dependencies
+  dependentTaskId String?
+  dependentTask  Task?   @relation("DependentTasks", fields: [dependentTaskId], references: [id], onDelete: Cascade)
+  dependencyTaskId String?
+  dependencyTask Task?   @relation("DependencyTasks", fields: [dependencyTaskId], references: [id], onDelete: Cascade)
+  
+  // Part dependencies
+  dependentPartId String?
+  dependentPart  Part?   @relation("DependentParts", fields: [dependentPartId], references: [id], onDelete: Cascade)
+  requiredPartId String?
+  requiredPart   Part?   @relation("RequiredParts", fields: [requiredPartId], references: [id], onDelete: Cascade)
+  
+  // Tool dependencies
+  requiredToolId String?
+  requiredTool   Tool?   @relation("RequiredTools", fields: [requiredToolId], references: [id], onDelete: Cascade)
+  
+  notes         String?
+}
+
+model CalendarEvent {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  allDay      Boolean   @default(false)
+  location    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId      String?
+  task        Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+} 
