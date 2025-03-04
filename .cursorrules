@@ -1,0 +1,183 @@
+# Cursorrules for RepairVantage Project
+version: 1.0.0
+
+# Development Process Guidelines
+workflow:
+  # Each major step should be committed with a descriptive message
+  - rule: "Each development phase must be committed with a descriptive message"
+    description: "After completing each major component, provide a commit message following conventional commit format"
+
+  - rule: "Installation instructions must be provided for dependencies"
+    description: "After adding new dependencies, provide clear installation commands"
+
+  - rule: "Tests should be written and run before completing a feature"
+    description: "Include test files for each major component and verify they pass"
+
+# Project Structure
+structure:
+  - rule: "Follow domain-driven design principles"
+    description: "Organize code by domain entities rather than by technical layers"
+
+  - rule: "Keep components small and focused"
+    description: "Each component should have a single responsibility"
+
+  - rule: "Maintain consistent naming conventions"
+    description: "Use camelCase for variables/functions, PascalCase for components/classes, and kebab-case for files"
+
+# Code Quality
+quality:
+  - rule: "Write type definitions for all entities"
+    description: "Ensure full TypeScript type coverage across the application"
+
+  - rule: "Document all public functions and components"
+    description: "Include JSDoc comments for all public APIs"
+
+  - rule: "Handle errors gracefully"
+    description: "Implement proper error handling and provide user-friendly error messages"
+
+# Development Phases
+phases:
+  - name: "Project Setup"
+    steps:
+      - "Initialize project repository"
+      - "Set up basic folder structure"
+      - "Configure development tools (TypeScript, ESLint, Prettier)"
+    commit: "chore: initialize project structure and tooling"
+
+  - name: "Database Schema Design"
+    steps:
+      - "Set up Prisma ORM"
+      - "Define database models"
+      - "Create initial migration"
+    commit: "feat: implement database schema with Prisma ORM"
+
+  - name: "Backend Development"
+    steps:
+      - "Set up Node.js with Express"
+      - "Configure Apollo Server for GraphQL"
+      - "Implement authentication with JWT"
+      - "Create GraphQL schema and resolvers"
+      - "Implement CRUD operations for all entities"
+    commit: "feat: implement backend server with GraphQL API"
+
+  - name: "Frontend Foundation"
+    steps:
+      - "Set up React with TypeScript"
+      - "Configure Apollo Client"
+      - "Set up TailwindCSS with DaisyUI"
+      - "Create base layout and navigation"
+    commit: "feat: set up frontend foundation with React and styling"
+
+  - name: "Authentication UI"
+    steps:
+      - "Create login and registration pages"
+      - "Implement authentication state management"
+      - "Add protected routes"
+    commit: "feat: implement authentication UI and state management"
+
+  - name: "Project Management UI"
+    steps:
+      - "Create project listing view"
+      - "Implement project creation/editing forms"
+      - "Add project details page"
+    commit: "feat: implement project management interface"
+
+  - name: "Task Management UI"
+    steps:
+      - "Create task listing view"
+      - "Implement task creation/editing forms"
+      - "Add drag-and-drop functionality"
+    commit: "feat: implement task management interface with drag-and-drop"
+
+  - name: "Parts and Tools Management UI"
+    steps:
+      - "Create inventory listing views"
+      - "Implement parts/tools creation/editing forms"
+      - "Add dependency management interface"
+    commit: "feat: implement parts and tools inventory management"
+
+  - name: "Calendar and Gantt Views"
+    steps:
+      - "Integrate calendar library"
+      - "Create calendar view for tasks"
+      - "Implement Gantt chart visualization"
+    commit: "feat: add calendar and Gantt chart visualizations"
+
+  - name: "Reporting and Export"
+    steps:
+      - "Create cost tracking and reporting interface"
+      - "Implement export functionality (PDF, CSV)"
+      - "Add search and filtering capabilities"
+    commit: "feat: implement reporting, export, and search features"
+
+  - name: "Testing and Refinement"
+    steps:
+      - "Write unit tests"
+      - "Perform integration testing"
+      - "Fix bugs and refine UI/UX"
+    commit: "test: add comprehensive test suite and refinements"
+
+  - name: "Documentation"
+    steps:
+      - "Create project README"
+      - "Document API endpoints"
+      - "Add usage instructions"
+    commit: "docs: add comprehensive documentation"
+
+# Dependencies by Phase
+dependencies:
+  - phase: "Project Setup"
+    packages:
+      - "typescript"
+      - "@types/node"
+      - "eslint"
+      - "prettier"
+    install: "npm install -D typescript @types/node eslint prettier"
+
+  - phase: "Database Schema Design"
+    packages:
+      - "prisma"
+      - "@prisma/client"
+    install: "npm install @prisma/client && npm install -D prisma"
+
+  - phase: "Backend Development"
+    packages:
+      - "express"
+      - "apollo-server-express"
+      - "graphql"
+      - "jsonwebtoken"
+      - "bcrypt"
+      - "@types/express"
+      - "@types/jsonwebtoken"
+      - "@types/bcrypt"
+    install: "npm install express apollo-server-express graphql jsonwebtoken bcrypt && npm install -D @types/express @types/jsonwebtoken @types/bcrypt"
+
+  - phase: "Frontend Foundation"
+    packages:
+      - "react"
+      - "react-dom"
+      - "react-router-dom"
+      - "@apollo/client"
+      - "tailwindcss"
+      - "daisyui"
+      - "postcss"
+      - "autoprefixer"
+      - "@types/react"
+      - "@types/react-dom"
+    install: "npm install react react-dom react-router-dom @apollo/client tailwindcss daisyui postcss autoprefixer && npm install -D @types/react @types/react-dom"
+
+  - phase: "Calendar and Gantt Views"
+    packages:
+      - "@fullcalendar/react"
+      - "@fullcalendar/daygrid"
+      - "@fullcalendar/timegrid"
+      - "@fullcalendar/interaction"
+      - "gantt-task-react"
+    install: "npm install @fullcalendar/react @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction gantt-task-react"
+
+  - phase: "Reporting and Export"
+    packages:
+      - "react-to-pdf"
+      - "papaparse"
+      - "@types/papaparse"
+    install: "npm install react-to-pdf papaparse && npm install -D @types/papaparse"

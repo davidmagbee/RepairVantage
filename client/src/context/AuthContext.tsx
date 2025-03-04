@@ -1,75 +1,68 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useApolloClient } from '@apollo/client';
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  profilePicture?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
-  loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  loading: true,
+  login: () => {},
+  logout: () => {},
+});
 
-export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const client = useApolloClient();
 
   useEffect(() => {
-    // Check for token and user data in localStorage
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    // Check for saved user in localStorage
+    const savedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
     
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+    if (savedUser && token) {
+      setUser(JSON.parse(savedUser));
     }
-    
     setLoading(false);
   }, []);
 
-  const login = (newToken: string, userData: User) => {
-    setToken(newToken);
-    setUser(userData);
-    localStorage.setItem('token', newToken);
+  const login = (token: string, userData: User) => {
+    localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
   };
 
   const logout = () => {
-    setToken(null);
-    setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    // Reset Apollo Client store on logout
-    client.resetStore();
+    setUser(null);
   };
 
-  const value = {
-    user,
-    token,
-    isAuthenticated: !!token,
-    login,
-    logout,
-    loading
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return (
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isAuthenticated: !!user, 
+        loading,
+        login,
+        logout 
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }; 

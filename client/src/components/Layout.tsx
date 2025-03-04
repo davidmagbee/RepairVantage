@@ -1,25 +1,23 @@
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import 'tailwindcss/tailwind.css';
 
-const Layout: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const Layout = () => {
+  const [theme, setTheme] = useState('repairvantage');
   const { user, logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  useEffect(() => {
+    // Apply theme to document
+    document.documentElement.setAttribute('data-theme', theme);
+    // Save theme preference
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'repairvantage' ? 'dark' : 'repairvantage');
   };
-
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: 'fa-solid fa-gauge-high' },
-    { name: 'Projects', path: '/projects', icon: 'fa-solid fa-diagram-project' },
-    { name: 'Tasks', path: '/tasks', icon: 'fa-solid fa-list-check' },
-    { name: 'Inventory', path: '/inventory', icon: 'fa-solid fa-boxes-stacked' },
-    { name: 'Calendar', path: '/calendar', icon: 'fa-solid fa-calendar-days' },
-  ];
 
   const isActive = (path: string) => {
     if (path === '/' && location.pathname === '/') return true;
@@ -28,95 +26,65 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <div className="drawer lg:drawer-open">
-      <input 
-        id="drawer-toggle" 
-        type="checkbox" 
-        className="drawer-toggle" 
-        checked={sidebarOpen}
-        onChange={() => setSidebarOpen(!sidebarOpen)}
-      />
-      
-      {/* Page content */}
-      <div className="drawer-content flex flex-col">
-        {/* Navbar */}
-        <div className="navbar bg-base-100 shadow-md lg:hidden">
-          <div className="flex-none">
-            <label htmlFor="drawer-toggle" className="btn btn-square btn-ghost drawer-button">
-              <i className="fa-solid fa-bars"></i>
+    <div className="min-h-screen bg-base-100 flex flex-col">
+      <header className="navbar bg-primary text-primary-content shadow-lg">
+        <div className="navbar-start">
+          <div className="dropdown">
+            <label tabIndex={0} className="btn btn-ghost lg:hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" />
+              </svg>
             </label>
+            <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+              <li><Link to="/">Dashboard</Link></li>
+              <li><Link to="/projects">Projects</Link></li>
+              <li><Link to="/tasks">Tasks</Link></li>
+              <li><Link to="/inventory">Inventory</Link></li>
+              <li><Link to="/calendar">Calendar</Link></li>
+            </ul>
           </div>
-          <div className="flex-1">
-            <Link to="/" className="btn btn-ghost normal-case text-xl">RepairVantage</Link>
-          </div>
-          <div className="flex-none">
-            <div className="dropdown dropdown-end">
-              <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
-                <div className="w-10 rounded-full">
-                  <img src={user?.profilePicture || 'https://placehold.co/400x400?text=User'} alt="avatar" />
-                </div>
-              </label>
-              <ul tabIndex={0} className="mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">
-                <li><a>Profile</a></li>
-                <li><a>Settings</a></li>
-                <li><a onClick={handleLogout}>Logout</a></li>
-              </ul>
-            </div>
+          <Link to="/" className="btn btn-ghost normal-case text-xl">RepairVantage</Link>
+        </div>
+        <div className="navbar-center hidden lg:flex">
+          <ul className="menu menu-horizontal px-1">
+            <li><Link to="/" className={isActive('/') ? 'active' : ''}>Dashboard</Link></li>
+            <li><Link to="/projects" className={isActive('/projects') ? 'active' : ''}>Projects</Link></li>
+            <li><Link to="/tasks" className={isActive('/tasks') ? 'active' : ''}>Tasks</Link></li>
+            <li><Link to="/inventory" className={isActive('/inventory') ? 'active' : ''}>Inventory</Link></li>
+            <li><Link to="/calendar" className={isActive('/calendar') ? 'active' : ''}>Calendar</Link></li>
+          </ul>
+        </div>
+        <div className="navbar-end">
+          <button className="btn btn-ghost btn-circle" onClick={toggleTheme}>
+            {theme === 'repairvantage' 
+              ? <i className="fa-solid fa-moon"></i> 
+              : <i className="fa-solid fa-sun"></i>
+            }
+          </button>
+          <div className="dropdown dropdown-end">
+            <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
+              <div className="w-10 rounded-full bg-primary-focus text-primary-content flex items-center justify-center">
+                <span>{user?.name?.charAt(0) || 'U'}</span>
+              </div>
+            </label>
+            <ul tabIndex={0} className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+              <li><a>Profile</a></li>
+              <li><a>Settings</a></li>
+              <li><a onClick={() => logout()}>Logout</a></li>
+            </ul>
           </div>
         </div>
-        
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-base-200">
-          <Outlet />
-        </main>
-      </div>
+      </header>
       
-      {/* Sidebar */}
-      <div className="drawer-side">
-        <label htmlFor="drawer-toggle" className="drawer-overlay"></label> 
-        <aside className="bg-base-100 w-64 h-full border-r">
-          <div className="px-4 py-6 text-center border-b">
-            <Link to="/" className="text-2xl font-bold">RepairVantage</Link>
-          </div>
-          
-          {/* Navigation */}
-          <ul className="menu p-4 w-full text-base-content gap-2">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <Link 
-                  to={item.path} 
-                  className={`flex items-center p-2 rounded-lg ${isActive(item.path) ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <i className={`${item.icon} w-5 h-5`}></i>
-                  <span>{item.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          
-          {/* User section at bottom */}
-          <div className="border-t mt-auto p-4">
-            <div className="flex items-center">
-              <div className="avatar">
-                <div className="w-10 rounded-full">
-                  <img src={user?.profilePicture || 'https://placehold.co/400x400?text=User'} alt="avatar" />
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="font-medium">{user?.name}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
-              </div>
-            </div>
-            <button 
-              className="btn btn-sm btn-outline w-full mt-4"
-              onClick={handleLogout}
-            >
-              <i className="fa-solid fa-sign-out-alt mr-2"></i> Logout
-            </button>
-          </div>
-        </aside>
-      </div>
+      <main className="flex-grow p-4">
+        <Outlet />
+      </main>
+      
+      <footer className="footer footer-center p-4 bg-base-300 text-base-content">
+        <div>
+          <p>Copyright © 2023 - RepairVantage Project Management</p>
+        </div>
+      </footer>
     </div>
   );
 };

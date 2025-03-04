@@ -9,27 +9,21 @@ export const GET_DASHBOARD_DATA = gql`
         id
         name
         dueDate
-        status
-        project {
-          id
-          name
-        }
       }
-      projectsByStatus {
-        status
-        count
-      }
-      recentProjects {
-        id
-        name
-        status
-        updatedAt
-        tasks {
-          id
-          name
-          status
-        }
-      }
+    }
+  }
+`;
+
+export const GET_PROJECTS = gql`
+  query GetProjects {
+    projects {
+      id
+      name
+      status
+      progress
+      dueDate
+      client
+      budget
     }
   }
 `;
