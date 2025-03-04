@@ -1,54 +1,116 @@
-# React + TypeScript + Vite
+# RepairVantage - Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+RepairVantage is a comprehensive repair management system that helps track projects, tasks, parts inventory, and repair scheduling.
 
-Currently, two official plugins are available:
+## Technologies
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 18** - Frontend library
+- **TypeScript** - Type-safe JavaScript
+- **Vite** - Build tool and development server
+- **Apollo Client** - GraphQL client
+- **TailwindCSS with DaisyUI** - Styling and UI components
+- **React Router** - Client-side routing
+- **date-fns** - Date manipulation library
+- **Testing Library** - Component testing
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- Node.js (v16+)
+- npm or yarn
+
+### Installation
+
+```
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Run tests
+npm test
+
+# Build for production
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Project Structure
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
 ```
+client/
+├── public/            # Static assets
+├── src/
+│   ├── components/    # Reusable UI components
+│   ├── context/       # React context providers
+│   ├── hooks/         # Custom React hooks
+│   ├── pages/         # Page components
+│   ├── services/      # API and service functions
+│   ├── types/         # TypeScript type definitions
+│   ├── utils/         # Utility functions
+│   ├── App.tsx        # Main application component
+│   └── main.tsx       # Application entry point
+├── .eslintrc.js       # ESLint configuration
+├── tsconfig.json      # TypeScript configuration
+└── vite.config.ts     # Vite configuration
+```
+
+## Development Roadmap
+
+### Completed
+
+- ✅ Project setup with Vite, React, and TypeScript
+- ✅ Basic dependency configuration
+- ✅ Initial application structure
+
+### In Progress
+
+- 🔄 Frontend foundation with Apollo Client
+- 🔄 TailwindCSS with DaisyUI setup
+- 🔄 Basic layout and navigation components
+
+### Upcoming
+
+- Authentication UI
+- Project Management UI
+- Task Management UI
+- Parts and Tools Management UI
+- Calendar and Gantt Views
+- Reporting and Export
+- Testing and Refinement
+
+## Deployment
+
+### Build for Production
+
+```
+npm run build
+```
+
+This will create a `dist` directory with optimized production assets.
+
+### Deployment Options
+
+1. **Static Hosting Services**:
+   - Netlify
+   - Vercel
+   - GitHub Pages
+   - AWS S3 + CloudFront
+
+2. **Container-based Deployment**:
+   - Docker container with Nginx
+   - Kubernetes cluster
+
+3. **Manual Deployment**:
+   - Copy the `dist` directory to your web server
+
+## Environment Configuration
+
+Create a `.env` file in the client root directory:
+
+```
+VITE_API_URL=http://localhost:4000/graphql
+```
+
+For production, set the correct API URL in your deployment environment.
