@@ -6,14 +6,14 @@ Vercel project `davidmagbees-projects/repairvantage` serves the Vite assets and 
 
 ## Configure sign-in
 
-Set `APP_ORIGIN` to the exact site origin. Configure `BETTER_AUTH_SECRET`, `DATABASE_URL`, and `TRUST_PROXY_HOPS` per the [server runbook](../server/README.md). The production target also requires:
+Set `APP_ORIGIN` to `https://repairvantage.vercel.app`. Configure `BETTER_AUTH_SECRET`, `DATABASE_URL`, and `TRUST_PROXY_HOPS` per the [server runbook](../server/README.md). Configure each sign-in method in Vercel Production:
 
 | Setting | Source |
 | --- | --- |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth Web client. For the initial origin register `https://repairvantage.vercel.app/api/auth/callback/google` exactly. [Google setup](https://developers.google.com/identity/protocols/oauth2/web-server) |
-| `RESEND_API_KEY`, `AUTH_EMAIL_FROM` | A sending key and an address on a verified sender domain. Use the Production environment in Vercel. [Resend domain setup](https://resend.com/docs/dashboard/domains/introduction) |
+| `RESEND_API_KEY`, `AUTH_EMAIL_FROM` | A sending key scoped to the verified `auth.davidmagbee.com` domain. The sender is `login@auth.davidmagbee.com`. [Resend domain setup](https://resend.com/docs/dashboard/domains/introduction) |
 
-Production checks require actual provider acceptance. Use a separate test database and provider configuration for hosted staging if one is needed. Keep credentials in the host's secret store.
+Each provider activates independently when its settings are complete. `/api/auth/providers` reports availability. `/ready` reports `auth_setup_required` until at least one method is configured. Redeploy after changing Vercel environment variables, then verify each provider through the browser. Use a separate test database and provider configuration for hosted staging if one is needed. Keep credentials in the host's secret store.
 
 Google sign-in requires a verified Gmail or Workspace mailbox. Other addresses can use a delivered email code. That distinction prevents a stale third-party Google claim from proving invite ownership. [Google mailbox authority](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token)
 

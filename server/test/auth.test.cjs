@@ -5,13 +5,59 @@ const test = require('node:test');
 const { createApplication } = require('../dist/app.js');
 const { readConfig } = require('../dist/config.js');
 
-test('email-code enrollment issues a verified session and logout revokes it', async () => {
+function testDatabaseUrl() {
   const databaseUrl = process.env.TEST_DATABASE_URL;
   assert.ok(databaseUrl, 'Set TEST_DATABASE_URL to a migrated disposable PostgreSQL database');
   const target = new URL(databaseUrl);
   assert.ok(['127.0.0.1', 'localhost', '[::1]'].includes(target.hostname) && target.pathname.endsWith('_test'),
     'Authentication integration tests require a loopback database whose name ends with _test');
+  return databaseUrl;
+}
 
+test('production serves public requests but disables sign-in until a provider is configured', async () => {
+  const origin = 'https://repairvantage.example';
+  const application = createApplication(readConfig({
+    NODE_ENV: 'production',
+    APP_ORIGIN: origin,
+    DATABASE_URL: testDatabaseUrl(),
+    BETTER_AUTH_SECRET: randomBytes(32).toString('base64url'),
+    AUTH_EMAIL_FROM: 'sender@example.test',
+  }));
+  const listener = application.app.listen(0, '127.0.0.1');
+  await once(listener, 'listening');
+  const baseURL = `http://127.0.0.1:${listener.address().port}`;
+  const post = (path, payload) => fetch(`${baseURL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Origin: origin },
+    body: JSON.stringify(payload),
+  });
+
+  try {
+    const health = await fetch(`${baseURL}/health`);
+    assert.equal(health.status, 200);
+    const ready = await fetch(`${baseURL}/ready`);
+    assert.equal(ready.status, 503);
+    assert.deepEqual(await ready.json(), { status: 'auth_setup_required' });
+    const providers = await fetch(`${baseURL}/api/auth/providers`);
+    assert.equal(providers.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await providers.json(), { google: false, emailOtp: false });
+    const session = await fetch(`${baseURL}/api/auth/get-session`);
+    assert.equal(session.status, 200);
+    assert.equal(await session.json(), null);
+    assert.equal((await post('/api/auth/sign-in/social', { provider: 'google' })).status, 503);
+    assert.equal((await post('/api/auth/email-otp/send-verification-otp', { email: 'recipient@example.test', type: 'sign-in' })).status, 503);
+    const workspace = await post('/graphql', { query: '{ me { email } }' });
+    assert.equal((await workspace.json()).errors[0].extensions.code, 'UNAUTHENTICATED');
+  } finally {
+    listener.closeAllConnections();
+    await new Promise(resolve => listener.close(resolve));
+    await application.apollo.stop();
+    await application.prisma.$disconnect();
+  }
+});
+
+test('email-code enrollment issues a verified session and logout revokes it', async () => {
+  const databaseUrl = testDatabaseUrl();
   const origin = 'http://localhost:5173';
   const email = `otp-${randomUUID()}@example.test`;
   const codes = [];
@@ -43,6 +89,7 @@ test('email-code enrollment issues a verified session and logout revokes it', as
     const ready = await fetch(`${baseURL}/ready`);
     assert.equal(ready.status, 200);
     assert.equal(ready.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await (await fetch(`${baseURL}/api/auth/providers`)).json(), { google: false, emailOtp: true });
     await application.prisma.otpThrottle.deleteMany({ where: { key: 'daily-budget' } });
 
     const requestCode = '/api/auth/email-otp/send-verification-otp';

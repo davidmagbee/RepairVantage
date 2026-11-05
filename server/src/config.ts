@@ -36,12 +36,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   const googleSecret = env.GOOGLE_CLIENT_SECRET?.trim();
   const resendKey = env.RESEND_API_KEY?.trim();
   const authEmailFrom = env.AUTH_EMAIL_FROM?.trim();
-  if (Boolean(googleId) !== Boolean(googleSecret) || (production && !googleId)) {
-    throw new Error('Configure both Google OAuth credentials');
-  }
-  if (Boolean(resendKey) !== Boolean(authEmailFrom) || (production && !resendKey)) {
-    throw new Error('Configure RESEND_API_KEY and AUTH_EMAIL_FROM together');
-  }
+  // A partially configured provider stays disabled. Public pages and existing sessions can still load.
   return {
     production, databaseUrl, origin, port, proxyHops, authSecret, otpDailyLimit,
     google: googleId && googleSecret ? { clientId: googleId, clientSecret: googleSecret } : undefined,

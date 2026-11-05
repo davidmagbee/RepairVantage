@@ -26,7 +26,7 @@ The dev listener defaults to port 4000. The Vite client forwards `/graphql` and 
 | `PORT` | Local listener port, default 4000. |
 | `TRUST_PROXY_HOPS` | Number of trusted reverse-proxy hops. Default 0. Match the verified ingress path before relying on IP-based rate limits. |
 
-Production requires both sign-in providers. Local HTTP tests inject an email sender and use a disposable PostgreSQL database.
+Each provider activates only when its credentials are complete. The public site can load before sign-in is configured. Production `/ready` returns `auth_setup_required` while both providers are disabled. Local HTTP tests inject an email sender and use a disposable PostgreSQL database.
 
 ## Checks
 

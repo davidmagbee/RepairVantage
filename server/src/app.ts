@@ -61,6 +61,11 @@ export function createApplication(config: ReturnType<typeof readConfig>, deliver
     res.set('Cache-Control', 'no-store');
     try {
       await checkReadiness();
+      const { google, emailOtp } = (await identity).providers;
+      if (config.production && !google && !emailOtp) {
+        res.status(503).json({ status: 'auth_setup_required' });
+        return;
+      }
       res.json({ status: 'ready' });
     } catch {
       res.status(503).json({ status: 'unavailable' });
@@ -76,13 +81,16 @@ export function createApplication(config: ReturnType<typeof readConfig>, deliver
       res.status(503).json({ error: 'Sign-in unavailable' });
     }
   });
-  const authPaths = new Set([
-    'GET /get-session', 'GET /callback/google', 'GET /error', 'POST /sign-in/social',
-    'POST /email-otp/send-verification-otp', 'POST /sign-in/email-otp', 'POST /sign-out',
+  // Gate provider routes independently while retaining session reads and sign-out.
+  const authPaths = new Map<string, 'google' | 'emailOtp' | null>([
+    ['GET /get-session', null], ['GET /error', null], ['POST /sign-out', null],
+    ['GET /callback/google', 'google'], ['POST /sign-in/social', 'google'],
+    ['POST /email-otp/send-verification-otp', 'emailOtp'], ['POST /sign-in/email-otp', 'emailOtp'],
   ]);
   app.all('/api/auth/*', async (req, res) => {
     res.set('Cache-Control', 'no-store');
-    if (!authPaths.has(`${req.method} ${req.path.slice('/api/auth'.length)}`)) {
+    const provider = authPaths.get(`${req.method} ${req.path.slice('/api/auth'.length)}`);
+    if (provider === undefined) {
       res.status(404).json({ error: 'Not found' });
       return;
     }
@@ -93,7 +101,12 @@ export function createApplication(config: ReturnType<typeof readConfig>, deliver
     // Replace the inbound value with the address resolved by the configured proxy trust boundary.
     req.headers['x-repairvantage-client-ip'] = req.ip;
     try {
-      await (await identity).handle(req, res);
+      const auth = await identity;
+      if (provider && !auth.providers[provider]) {
+        res.status(503).json({ error: 'This sign-in method is unavailable' });
+        return;
+      }
+      await auth.handle(req, res);
     } catch {
       if (!res.headersSent) res.status(503).json({ error: 'Sign-in unavailable' });
       else res.end();

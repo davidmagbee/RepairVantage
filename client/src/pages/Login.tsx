@@ -9,6 +9,19 @@ interface Providers {
   emailOtp: boolean;
 }
 
+// OAuth failures can return after a provider is disabled. Only suggest methods that are available now.
+function googleErrorMessage(error: string, providers: Providers) {
+  if (!providers.google) return 'Google sign-in is unavailable. Use an email code to continue.';
+  if (error === 'google_email_not_authoritative') {
+    return providers.emailOtp
+      ? 'Use an email code to sign in with this address.'
+      : 'Google could not verify this address for RepairVantage. Try another Google account.';
+  }
+  return providers.emailOtp
+    ? 'Google sign-in could not be completed. Try again or use an email code.'
+    : 'Google sign-in could not be completed. Try again.';
+}
+
 export default function Login({ createAccount = false }: { createAccount?: boolean }) {
   const { state, search } = useLocation();
   const params = new URLSearchParams(search);
@@ -19,10 +32,12 @@ export default function Login({ createAccount = false }: { createAccount?: boole
   const [sentTo, setSentTo] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string>();
   const googleError = params.get('error');
-  const [message, setMessage] = useState(googleError === 'google_email_not_authoritative'
-    ? 'Use an email code to sign in with this address.'
-    : googleError ? 'Google sign-in could not be completed. Try again or use an email code.' : '');
+  const hasProvider = Boolean(providers?.google || providers?.emailOtp);
+  const displayedError = message ?? (providers && hasProvider && googleError
+    ? googleErrorMessage(googleError, providers)
+    : '');
 
   useEffect(() => {
     const request = new AbortController();
@@ -30,7 +45,10 @@ export default function Login({ createAccount = false }: { createAccount?: boole
       try {
         const response = await fetch('/api/auth/providers', { signal: request.signal });
         if (!response.ok) throw new Error('Provider discovery failed');
-        const result: Providers = await response.json();
+        const result: Providers | null = await response.json();
+        if (typeof result?.google !== 'boolean' || typeof result?.emailOtp !== 'boolean') {
+          throw new Error('Invalid provider availability');
+        }
         setProviders(result);
       } catch {
         if (!request.signal.aborted) setProviderError(true);
@@ -97,11 +115,11 @@ export default function Login({ createAccount = false }: { createAccount?: boole
         <div className="card-body gap-4">
           <h1 className="text-3xl font-bold">{createAccount ? 'Create an account' : 'Sign in'}</h1>
           <p>{createAccount ? 'Start tracking your repair projects.' : 'Open your repair projects.'}</p>
-          {message && <p role="alert" className="alert alert-error">{message}</p>}
+          {displayedError && <p role="alert" className="alert alert-error">{displayedError}</p>}
           {providerError && <p role="alert">Could not load sign-in options. Reload to try again.</p>}
           {!providerError && !providers && <p role="status">Loading sign-in options…</p>}
-          {providers && !providers.google && !providers.emailOtp && (
-            <p role="status">Sign-in is currently unavailable.</p>
+          {providers && !hasProvider && (
+            <p role="status">Sign-in and account creation are currently unavailable. Please try again later.</p>
           )}
           {providers?.google && (
             <button className="btn btn-outline w-full" type="button" disabled={busy} onClick={() => void signInWithGoogle()}>
@@ -157,11 +175,11 @@ export default function Login({ createAccount = false }: { createAccount?: boole
               )}
             </form>
           )}
-          {createAccount ? (
+          {hasProvider && (createAccount ? (
             <p>Already registered? <Link to="/login" state={{ returnTo: destination }} className="link">Sign in</Link></p>
           ) : (
             <p>New to RepairVantage? <Link to="/register" state={{ returnTo: destination }} className="link">Create an account</Link></p>
-          )}
+          ))}
         </div>
       </div>
     </main>
