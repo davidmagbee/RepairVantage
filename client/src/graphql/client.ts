@@ -1,23 +1,20 @@
-import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+import { ApolloClient, HttpLink, InMemoryCache, from } from '@apollo/client';
+import { onError } from '@apollo/client/link/error';
 
-const httpLink = createHttpLink({
-  uri: 'http://localhost:4000/graphql',
-});
+export const privateOperation = { requiresSession: true };
 
-const authLink = setContext((_, { headers }) => {
-  // Get token from localStorage
-  const token = localStorage.getItem('token');
-  
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : '',
+export function createClient(onSessionExpired: () => void) {
+  const sessionLink = onError(({ operation, graphQLErrors }) => {
+    if (
+      operation.getContext().requiresSession &&
+      graphQLErrors?.some((error) => error.extensions?.code === 'UNAUTHENTICATED')
+    ) {
+      onSessionExpired();
     }
-  };
-});
+  });
 
-export const client = new ApolloClient({
-  link: authLink.concat(httpLink),
-  cache: new InMemoryCache()
-}); 
+  return new ApolloClient({
+    link: from([sessionLink, new HttpLink({ uri: '/graphql', credentials: 'same-origin' })]),
+    cache: new InMemoryCache(),
+  });
+}

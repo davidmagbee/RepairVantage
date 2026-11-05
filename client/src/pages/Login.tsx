@@ -1,119 +1,168 @@
-import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { LOGIN_USER } from '../graphql/mutations';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { authClient } from '../context/auth-client';
+import { returnPath } from '../context/return-path';
 
-const Login: React.FC = () => {
+interface Providers {
+  google: boolean;
+  emailOtp: boolean;
+}
+
+export default function Login({ createAccount = false }: { createAccount?: boolean }) {
+  const { state, search } = useLocation();
+  const params = new URLSearchParams(search);
+  const destination = returnPath(state?.returnTo ?? params.get('returnTo'));
+  const [providers, setProviders] = useState<Providers | null>(null);
+  const [providerError, setProviderError] = useState(false);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [sentTo, setSentTo] = useState('');
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(
+    params.has('error') ? 'Google sign-in could not be completed. Try again.' : '',
+  );
 
-  const [loginMutation, { loading }] = useMutation(LOGIN_USER, {
-    onCompleted: (data) => {
-      const { token, user } = data.login;
-      login(token, user);
-      navigate('/');
-    },
-    onError: (error) => {
-      setError(error.message);
+  useEffect(() => {
+    const request = new AbortController();
+    async function loadProviders() {
+      try {
+        const response = await fetch('/api/auth/providers', { signal: request.signal });
+        if (!response.ok) throw new Error('Provider discovery failed');
+        const result: Providers = await response.json();
+        setProviders(result);
+      } catch {
+        if (!request.signal.aborted) setProviderError(true);
+      }
     }
-  });
+    void loadProviders();
+    return () => request.abort();
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (!email || !password) {
-      setError('Please enter both email and password');
+  async function requestCode(address: string) {
+    setBusy(true);
+    setMessage('');
+    try {
+      const result = await authClient.emailOtp.sendVerificationOtp({ email: address, type: 'sign-in' });
+      if (result.error) throw result.error;
+      setSentTo(address);
+      setCode('');
+    } catch {
+      setMessage('Could not send a code. Check the email address or try again later.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!sentTo) {
+      await requestCode(email.trim());
       return;
     }
-    
+
+    setBusy(true);
+    setMessage('');
     try {
-      await loginMutation({
-        variables: { input: { email, password } }
-      });
-    } catch (err) {
-      // Error is handled in onError callback
+      const result = await authClient.signIn.emailOtp({ email: sentTo, otp: code.trim() });
+      if (result.error) throw result.error;
+    } catch {
+      setMessage('Could not verify that code. Try again or request a new code.');
+    } finally {
+      setBusy(false);
     }
-  };
+  }
+
+  async function signInWithGoogle() {
+    setBusy(true);
+    setMessage('');
+    try {
+      const result = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: destination,
+        errorCallbackURL: `/login?${new URLSearchParams({ returnTo: destination })}`,
+      });
+      if (result.error) throw result.error;
+    } catch {
+      setMessage('Google sign-in could not be completed. Try again.');
+      setBusy(false);
+    }
+  }
 
   return (
-    <div className="hero min-h-screen bg-base-200">
-      <div className="hero-content flex-col lg:flex-row-reverse">
-        <div className="text-center lg:text-left lg:ml-8">
-          <h1 className="text-5xl font-bold">RepairVantage</h1>
-          <p className="py-6">
-            Your complete solution for planning and tracking repair projects. 
-            Manage tasks, inventory, schedules, and more in one place.
-          </p>
-        </div>
-        <div className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
-          <div className="card-body">
-            <h2 className="text-2xl font-bold text-center mb-4">Login</h2>
-            
-            {error && (
-              <div className="alert alert-error shadow-lg mb-4">
-                <div>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <span>{error}</span>
+    <main className="mx-auto max-w-md space-y-4 px-4 py-12">
+      <Link to="/" className="link">RepairVantage</Link>
+      <div className="card bg-base-100 shadow">
+        <div className="card-body gap-4">
+          <h1 className="text-3xl font-bold">{createAccount ? 'Create an account' : 'Sign in'}</h1>
+          <p>{createAccount ? 'Start tracking your repair projects.' : 'Open your repair projects.'}</p>
+          {message && <p role="alert" className="alert alert-error">{message}</p>}
+          {providerError && <p role="alert">Could not load sign-in options. Reload to try again.</p>}
+          {!providerError && !providers && <p role="status">Loading sign-in options…</p>}
+          {providers && !providers.google && !providers.emailOtp && (
+            <p role="status">Sign-in is currently unavailable.</p>
+          )}
+          {providers?.google && (
+            <button className="btn btn-outline w-full" type="button" disabled={busy} onClick={() => void signInWithGoogle()}>
+              Continue with Google
+            </button>
+          )}
+          {providers?.google && providers.emailOtp && <div className="divider my-0">or</div>}
+          {providers?.emailOtp && (
+            <form className="space-y-4" onSubmit={(event) => void submit(event)}>
+              {!sentTo ? (
+                <label className="form-control gap-1">
+                  <span>Email address</span>
+                  <input
+                    className="input input-bordered"
+                    type="email"
+                    autoComplete="email"
+                    maxLength={254}
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                </label>
+              ) : (
+                <>
+                  <p role="status">Check {sentTo} for a one-time code.</p>
+                  <label className="form-control gap-1">
+                    <span>One-time code</span>
+                    <input
+                      className="input input-bordered"
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      value={code}
+                      onChange={(event) => setCode(event.target.value)}
+                      required
+                    />
+                  </label>
+                </>
+              )}
+              <button className="btn btn-primary w-full" type="submit" disabled={busy}>
+                {busy ? 'Please wait…' : sentTo ? 'Verify code' : 'Email me a code'}
+              </button>
+              {sentTo && (
+                <div className="flex flex-wrap gap-3">
+                  <button className="link" type="button" disabled={busy} onClick={() => void requestCode(sentTo)}>
+                    Send a new code
+                  </button>
+                  <button className="link" type="button" disabled={busy} onClick={() => { setSentTo(''); setMessage(''); }}>
+                    Change email
+                  </button>
                 </div>
-              </div>
-            )}
-            
-            <form onSubmit={handleSubmit}>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Email</span>
-                </label>
-                <input 
-                  type="email" 
-                  placeholder="email" 
-                  className="input input-bordered" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Password</span>
-                </label>
-                <input 
-                  type="password" 
-                  placeholder="password"
-                  className="input input-bordered" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <label className="label">
-                  <a href="#" className="label-text-alt link link-hover">Forgot password?</a>
-                </label>
-              </div>
-              <div className="form-control mt-6">
-                <button 
-                  type="submit" 
-                  className={`btn btn-primary ${loading ? 'loading' : ''}`}
-                  disabled={loading}
-                >
-                  {loading ? 'Logging in...' : 'Login'}
-                </button>
-              </div>
+              )}
             </form>
-            
-            <div className="divider">OR</div>
-            
-            <div className="text-center">
-              <p>Don't have an account? <Link to="/register" className="link link-primary">Register</Link></p>
-            </div>
-          </div>
+          )}
+          {createAccount ? (
+            <p>Already registered? <Link to="/login" state={{ returnTo: destination }} className="link">Sign in</Link></p>
+          ) : (
+            <p>New to RepairVantage? <Link to="/register" state={{ returnTo: destination }} className="link">Create an account</Link></p>
+          )}
         </div>
       </div>
-    </div>
+    </main>
   );
-};
-
-export default Login; 
+}

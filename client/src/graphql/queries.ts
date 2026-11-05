@@ -1,67 +1,66 @@
 import { gql } from '@apollo/client';
 
-export const GET_DASHBOARD_DATA = gql`
-  query GetDashboardData {
-    dashboardData {
-      totalProjects
-      completedProjects
-      upcomingDeadlines {
-        id
-        name
-        dueDate
-      }
-    }
+export const PROJECT_FIELDS = gql`
+  fragment ProjectFields on Project {
+    id
+    name
+    description
+    status
+    priority
+    canManage
+  }
+`;
+
+export const COMMENT_FIELDS = gql`
+  fragment CommentFields on ProjectComment {
+    id
+    body
+    createdAt
+    author { name }
   }
 `;
 
 export const GET_PROJECTS = gql`
   query GetProjects {
     projects {
-      id
-      name
-      status
-      progress
-      dueDate
-      client
-      budget
+      ...ProjectFields
+    }
+    sharedProjects {
+      ...ProjectFields
     }
   }
+  ${PROJECT_FIELDS}
 `;
 
 export const GET_PROJECT_DETAILS = gql`
   query GetProjectDetails($id: ID!) {
     project(id: $id) {
-      id
-      name
-      description
-      startDate
-      endDate
-      status
-      priority
-      notes
-      budget
-      tasks {
-        id
-        name
-        status
-        dueDate
-      }
-      parts {
-        part {
-          id
-          name
-          price
-        }
-        quantity
-      }
-      tools {
-        tool {
-          id
-          name
-        }
+      ...ProjectFields
+      comments {
+        ...CommentFields
       }
     }
   }
+  ${PROJECT_FIELDS}
+  ${COMMENT_FIELDS}
 `;
 
-// Additional queries will be added as needed 
+export interface Project {
+  id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  canManage: boolean;
+}
+
+export interface ProjectComment {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: { name: string };
+}
+
+export interface ProjectWithComments extends Project {
+  comments: ProjectComment[];
+}

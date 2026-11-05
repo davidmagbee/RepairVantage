@@ -47,7 +47,6 @@ Thumbs.db
 
 # Prisma
 prisma/.env
-prisma/migrations
 
 # Testing
 /coverage

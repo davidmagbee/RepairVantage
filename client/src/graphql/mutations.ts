@@ -1,49 +1,29 @@
 import { gql } from '@apollo/client';
-
-export const LOGIN_USER = gql`
-  mutation Login($input: LoginInput!) {
-    login(input: $input) {
-      token
-      user {
-        id
-        name
-        email
-        role
-        profilePicture
-      }
-    }
-  }
-`;
-
-export const REGISTER_USER = gql`
-  mutation Register($input: UserInput!) {
-    register(input: $input) {
-      token
-      user {
-        id
-        name
-        email
-        role
-        profilePicture
-      }
-    }
-  }
-`;
+import { COMMENT_FIELDS, PROJECT_FIELDS } from './queries';
 
 export const CREATE_PROJECT = gql`
   mutation CreateProject($input: ProjectInput!) {
     createProject(input: $input) {
-      id
-      name
-      description
-      startDate
-      endDate
-      status
-      priority
-      notes
-      budget
+      ...ProjectFields
     }
   }
+  ${PROJECT_FIELDS}
 `;
 
-// Other mutations will be added as needed 
+export const UPDATE_PROJECT_STATUS = gql`
+  mutation UpdateProjectStatus($id: ID!, $status: ProjectStatus!) {
+    updateProject(id: $id, input: { status: $status }) {
+      ...ProjectFields
+    }
+  }
+  ${PROJECT_FIELDS}
+`;
+
+export const ADD_PROJECT_COMMENT = gql`
+  mutation AddProjectComment($projectId: ID!, $body: String!) {
+    addProjectComment(projectId: $projectId, body: $body) {
+      ...CommentFields
+    }
+  }
+  ${COMMENT_FIELDS}
+`;

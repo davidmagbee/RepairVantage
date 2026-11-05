@@ -1,0 +1,82 @@
+const assert = require('node:assert/strict');
+const { randomBytes, randomUUID } = require('node:crypto');
+const { once } = require('node:events');
+const test = require('node:test');
+const { createApplication } = require('../dist/app.js');
+const { readConfig } = require('../dist/config.js');
+
+test('email-code enrollment issues a verified session and logout revokes it', async () => {
+  const databaseUrl = process.env.TEST_DATABASE_URL;
+  assert.ok(databaseUrl, 'Set TEST_DATABASE_URL to a migrated disposable PostgreSQL database');
+  const target = new URL(databaseUrl);
+  assert.ok(['127.0.0.1', 'localhost', '[::1]'].includes(target.hostname) && target.pathname.endsWith('_test'),
+    'Authentication integration tests require a loopback database whose name ends with _test');
+
+  const origin = 'http://localhost:5173';
+  const email = `otp-${randomUUID()}@example.test`;
+  const codes = [];
+  const application = createApplication(readConfig({
+    APP_ORIGIN: origin,
+    DATABASE_URL: databaseUrl,
+    BETTER_AUTH_SECRET: randomBytes(32).toString('base64url'),
+    TRUST_PROXY_HOPS: '1',
+  }), async (recipient, code) => codes.push({ recipient, code }));
+  const listener = application.app.listen(0, '127.0.0.1');
+  await once(listener, 'listening');
+
+  // Each local test run gets a separate trusted test IP for persistent rate-limit rows.
+  const ip = `192.0.${randomBytes(1)[0]}.${randomBytes(1)[0]}`;
+  const baseURL = `http://127.0.0.1:${listener.address().port}`;
+  async function post(path, payload, { browserOrigin = origin, cookie } = {}) {
+    return fetch(`${baseURL}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json', Origin: browserOrigin, 'X-Forwarded-For': ip,
+        ...(cookie ? { Cookie: cookie } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  try {
+    const ready = await fetch(`${baseURL}/ready`);
+    assert.equal(ready.status, 200);
+    assert.equal(ready.headers.get('cache-control'), 'no-store');
+
+    const requestCode = '/api/auth/email-otp/send-verification-otp';
+    assert.equal((await post(requestCode, { email, type: 'sign-in' }, { browserOrigin: 'https://outside.example' })).status, 403);
+    assert.equal((await post(requestCode, { email, type: 'forget-password' })).status, 400);
+    assert.deepEqual(codes, []);
+    assert.equal((await post(requestCode, { email, type: 'sign-in' })).status, 200);
+    assert.equal(codes.length, 1);
+    assert.equal(codes[0].recipient, email);
+
+    const signIn = '/api/auth/sign-in/email-otp';
+    const input = { email, otp: codes[0].code, name: 'Integration Owner' };
+    const wrongCode = codes[0].code === '000000' ? '111111' : '000000';
+    assert.equal((await post(signIn, { ...input, otp: wrongCode })).ok, false);
+    const session = await post(signIn, input);
+    assert.equal(session.status, 200);
+    assert.equal((await session.json()).user.emailVerified, true);
+    const sessionHeader = session.headers.getSetCookie().find(value => value.startsWith('repairvantage.session_token='));
+    assert.match(sessionHeader, /; HttpOnly/i);
+    const cookie = sessionHeader.split(';')[0];
+    assert.equal((await post(signIn, input)).ok, false);
+
+    const query = { query: '{ me { email name } }' };
+    const authorized = await post('/graphql', query, { cookie });
+    assert.equal(authorized.headers.get('cache-control'), 'no-store');
+    assert.deepEqual((await authorized.json()).data.me, { email, name: 'Integration Owner' });
+    const logout = await post('/api/auth/sign-out', {}, { cookie });
+    assert.equal(logout.status, 200);
+    const afterLogout = await (await post('/graphql', query, { cookie })).json();
+    assert.equal(afterLogout.data, null);
+    assert.equal(afterLogout.errors[0].extensions.code, 'UNAUTHENTICATED');
+  } finally {
+    listener.closeAllConnections();
+    await new Promise(resolve => listener.close(resolve));
+    await application.prisma.user.deleteMany({ where: { email } });
+    await application.apollo.stop();
+    await application.prisma.$disconnect();
+  }
+});

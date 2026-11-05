@@ -1,30 +1,33 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { returnPath } from '../context/return-path';
 
-interface PrivateRouteProps {
-  children: React.ReactNode;
-}
-
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    // Show loading spinner or placeholder while checking authentication status
+function SessionStatus() {
+  const { loading, error, retry } = useAuth();
+  if (loading) return <p className="p-8 text-center" role="status">Checking your session…</p>;
+  if (error) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="mx-auto max-w-md space-y-4 p-8">
+        <p role="alert">Could not verify your session.</p>
+        <button className="btn btn-primary" onClick={retry}>Try again</button>
       </div>
     );
   }
+  return null;
+}
 
-  if (!isAuthenticated) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" replace />;
-  }
+export default function PrivateRoute() {
+  const { user, loading, error } = useAuth();
+  const { pathname } = useLocation();
+  if (loading || error) return <SessionStatus />;
+  if (!user) return <Navigate to="/login" state={{ returnTo: pathname }} replace />;
+  return <Outlet />;
+}
 
-  // Render children if authenticated
-  return <>{children}</>;
-};
-
-export default PrivateRoute; 
+export function GuestRoute() {
+  const { user, loading, error } = useAuth();
+  const { state, search } = useLocation();
+  if (loading || error) return <SessionStatus />;
+  if (user) return <Navigate to={returnPath(state?.returnTo ?? new URLSearchParams(search).get('returnTo'))} replace />;
+  return <Outlet />;
+}

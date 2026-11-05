@@ -1,28 +1,19 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { ApolloProvider } from '@apollo/client'
-import { BrowserRouter } from 'react-router-dom'
-import { client } from './graphql/client'
-import './index.css'
-import App from './App'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import App from './App';
+import './index.css';
 
-// Initialize the default theme
-document.documentElement.setAttribute('data-theme', 'repairvantage')
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('Failed to find the root element');
 
-// For debugging styles
-document.body.classList.add('debug-screens')
-
-const rootElement = document.getElementById('root')
-if (!rootElement) throw new Error('Failed to find the root element')
-
-const root = createRoot(rootElement)
-
-root.render(
+createRoot(rootElement).render(
   <StrictMode>
-    <ApolloProvider client={client}>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <App />
-      </BrowserRouter>
-    </ApolloProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </StrictMode>,
-)
+);

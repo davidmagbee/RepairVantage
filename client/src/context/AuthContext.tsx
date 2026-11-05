@@ -1,68 +1,28 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { ApolloProvider } from '@apollo/client';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+import { createClient } from '../graphql/client';
+import { authClient } from './auth-client';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  profilePicture?: string;
+export function useAuth() {
+  const { data, error, isPending, refetch } = authClient.useSession();
+  return {
+    user: !error && data?.user.emailVerified ? data.user : null,
+    loading: isPending,
+    error: Boolean(error),
+    retry: () => { void refetch(); },
+  };
 }
 
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  loading: boolean;
-  login: (token: string, user: User) => void;
-  logout: () => void;
+function ApolloSession({ children }: { children: ReactNode }) {
+  const { retry } = useAuth();
+  const [client] = useState(() => createClient(retry));
+  return <ApolloProvider client={client}>{children}</ApolloProvider>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isAuthenticated: false,
-  loading: true,
-  login: () => {},
-  logout: () => {},
-});
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
 
-export const useAuth = () => useContext(AuthContext);
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check for saved user in localStorage
-    const savedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    
-    if (savedUser && token) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const login = (token: string, userData: User) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-  };
-
-  return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user, 
-        loading,
-        login,
-        logout 
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}; 
+  // A session transition gets a new cache, isolating delayed responses from the previous identity.
+  return <ApolloSession key={user?.id ?? 'guest'}>{children}</ApolloSession>;
+}
