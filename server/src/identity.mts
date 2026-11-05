@@ -11,6 +11,31 @@ import type { readConfig } from './config.js';
 type IdentityConfig = ReturnType<typeof readConfig>;
 type CodeSender = (email: string, code: string) => Promise<void>;
 
+/** Reserve delivery capacity before Better Auth can rotate a valid code. */
+async function reserveCodeSend(prisma: PrismaClient, email: string, config: IdentityConfig) {
+  const recipient = createHmac('sha256', config.authSecret).update(`recipient:${email}`).digest('hex');
+  const now = Date.now();
+  const day = Math.floor(now / 86_400_000) * 86_400_000;
+  await prisma.$transaction(async tx => {
+    const allowed = await tx.$executeRaw`
+      INSERT INTO "OtpThrottle" ("key", "count", "windowStartedAt")
+      VALUES (${`recipient:${recipient}`}, 1, ${BigInt(now)})
+      ON CONFLICT ("key") DO UPDATE SET "windowStartedAt" = EXCLUDED."windowStartedAt"
+      WHERE "OtpThrottle"."windowStartedAt" <= EXCLUDED."windowStartedAt" - 60000`;
+    if (!allowed) throw new APIError('TOO_MANY_REQUESTS', { message: 'Wait a minute before requesting another code.' });
+
+    const budget = await tx.$executeRaw`
+      INSERT INTO "OtpThrottle" ("key", "count", "windowStartedAt")
+      VALUES ('daily-budget', 1, ${BigInt(day)})
+      ON CONFLICT ("key") DO UPDATE
+      SET "count" = CASE WHEN "OtpThrottle"."windowStartedAt" < EXCLUDED."windowStartedAt" THEN 1 ELSE "OtpThrottle"."count" + 1 END,
+          "windowStartedAt" = EXCLUDED."windowStartedAt"
+      WHERE "OtpThrottle"."windowStartedAt" < EXCLUDED."windowStartedAt"
+        OR ("OtpThrottle"."windowStartedAt" = EXCLUDED."windowStartedAt" AND "OtpThrottle"."count" < ${config.otpDailyLimit})`;
+    if (!budget) throw new APIError('TOO_MANY_REQUESTS', { message: 'Email codes are temporarily unavailable. Try Google or return later.' });
+  });
+}
+
 /** Provider errors can contain recipient information. Return a fixed message to the browser. */
 function makeCodeSender(config: NonNullable<IdentityConfig['email']>): CodeSender {
   const resend = new Resend(config.apiKey);
@@ -40,7 +65,20 @@ export function createIdentity(prisma: PrismaClient, config: IdentityConfig, del
     secret: config.authSecret,
     trustedOrigins: [config.origin],
     database: prismaAdapter(prisma, { provider: 'postgresql', transaction: true }),
-    user: { fields: { image: 'profilePicture' } },
+    user: {
+      fields: { image: 'profilePicture' },
+      validateUserInfo({ source }) {
+        if (source.oauth?.providerId !== 'google') return;
+        const { email, email_verified, hd } = source.oauth.profile ?? {};
+        // Google does not prove current ownership of a third-party mailbox.
+        const gmail = typeof email === 'string' && /@gmail\.com$/i.test(email);
+        const workspace = typeof hd === 'string' && hd.trim().length > 0;
+        if (email_verified !== true || (!gmail && !workspace)) {
+          return { error: 'google_email_not_authoritative', errorDescription: 'Sign in with an email code for this address.' };
+        }
+        return undefined;
+      },
+    },
     advanced: {
       cookiePrefix: 'repairvantage',
       useSecureCookies: config.production,
@@ -62,8 +100,18 @@ export function createIdentity(prisma: PrismaClient, config: IdentityConfig, del
     },
     hooks: {
       before: createAuthMiddleware(async context => {
-        if (context.path === '/email-otp/send-verification-otp' && context.body?.type !== 'sign-in') {
-          throw new APIError('BAD_REQUEST', { message: 'Only sign-in codes are available.' });
+        if (context.path === '/email-otp/send-verification-otp') {
+          if (context.body?.type !== 'sign-in') {
+            throw new APIError('BAD_REQUEST', { message: 'Only sign-in codes are available.' });
+          }
+          if (sendCode && typeof context.body.email === 'string') {
+            const email = context.body.email.trim().toLowerCase();
+            if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              throw new APIError('BAD_REQUEST', { message: 'Enter a valid email address.' });
+            }
+            await reserveCodeSend(prisma, email, config);
+            return { context: { body: { ...context.body, email } } };
+          }
         }
         if (context.path === '/sign-in/email-otp' && typeof context.body?.name === 'string') {
           const name = context.body.name.trim();

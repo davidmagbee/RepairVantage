@@ -20,6 +20,7 @@ test('email-code enrollment issues a verified session and logout revokes it', as
     DATABASE_URL: databaseUrl,
     BETTER_AUTH_SECRET: randomBytes(32).toString('base64url'),
     TRUST_PROXY_HOPS: '1',
+    AUTH_OTP_DAILY_LIMIT: '1',
   }), async (recipient, code) => codes.push({ recipient, code }));
   const listener = application.app.listen(0, '127.0.0.1');
   await once(listener, 'listening');
@@ -27,11 +28,11 @@ test('email-code enrollment issues a verified session and logout revokes it', as
   // Each local test run gets a separate trusted test IP for persistent rate-limit rows.
   const ip = `192.0.${randomBytes(1)[0]}.${randomBytes(1)[0]}`;
   const baseURL = `http://127.0.0.1:${listener.address().port}`;
-  async function post(path, payload, { browserOrigin = origin, cookie } = {}) {
+  async function post(path, payload, { browserOrigin = origin, cookie, clientIp = ip } = {}) {
     return fetch(`${baseURL}${path}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json', Origin: browserOrigin, 'X-Forwarded-For': ip,
+        'Content-Type': 'application/json', Origin: browserOrigin, 'X-Forwarded-For': clientIp,
         ...(cookie ? { Cookie: cookie } : {}),
       },
       body: JSON.stringify(payload),
@@ -42,12 +43,19 @@ test('email-code enrollment issues a verified session and logout revokes it', as
     const ready = await fetch(`${baseURL}/ready`);
     assert.equal(ready.status, 200);
     assert.equal(ready.headers.get('cache-control'), 'no-store');
+    await application.prisma.otpThrottle.deleteMany({ where: { key: 'daily-budget' } });
 
     const requestCode = '/api/auth/email-otp/send-verification-otp';
     assert.equal((await post(requestCode, { email, type: 'sign-in' }, { browserOrigin: 'https://outside.example' })).status, 403);
     assert.equal((await post(requestCode, { email, type: 'forget-password' })).status, 400);
     assert.deepEqual(codes, []);
     assert.equal((await post(requestCode, { email, type: 'sign-in' })).status, 200);
+    const duplicate = await post(requestCode, { email: email.toUpperCase(), type: 'sign-in' }, { clientIp: '192.0.2.34' });
+    assert.equal(duplicate.status, 429);
+    assert.match((await duplicate.json()).message, /Wait a minute/);
+    const atBudget = await post(requestCode, { email: `other-${email}`, type: 'sign-in' }, { clientIp: '192.0.2.35' });
+    assert.equal(atBudget.status, 429);
+    assert.match((await atBudget.json()).message, /temporarily unavailable/);
     assert.equal(codes.length, 1);
     assert.equal(codes[0].recipient, email);
 
@@ -76,6 +84,7 @@ test('email-code enrollment issues a verified session and logout revokes it', as
     listener.closeAllConnections();
     await new Promise(resolve => listener.close(resolve));
     await application.prisma.user.deleteMany({ where: { email } });
+    await application.prisma.otpThrottle.deleteMany({ where: { key: 'daily-budget' } });
     await application.apollo.stop();
     await application.prisma.$disconnect();
   }

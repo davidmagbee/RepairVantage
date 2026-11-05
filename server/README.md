@@ -22,6 +22,7 @@ The dev listener defaults to port 4000. The Vite client forwards `/graphql` and 
 | `BETTER_AUTH_SECRET` | Random secret of at least 32 characters. Keep separate values per environment. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth client. Configure `APP_ORIGIN/api/auth/callback/google` as an authorized redirect URI. |
 | `RESEND_API_KEY`, `AUTH_EMAIL_FROM` | Credentials and verified sender for sign-in codes. |
+| `AUTH_OTP_DAILY_LIMIT` | Maximum code requests per UTC day. Defaults to 75. Set below the email provider's available send quota. |
 | `PORT` | Local listener port, default 4000. |
 | `TRUST_PROXY_HOPS` | Number of trusted reverse-proxy hops. Default 0. Match the verified ingress path before relying on IP-based rate limits. |
 

@@ -15,6 +15,8 @@ Set `APP_ORIGIN` to the exact site origin. Configure `BETTER_AUTH_SECRET`, `DATA
 
 Production checks require actual provider acceptance. Use a separate test database and provider configuration for hosted staging if one is needed. Keep credentials in the host's secret store.
 
+Google sign-in requires a verified Gmail or Workspace mailbox. Other addresses can use a delivered email code. That distinction prevents a stale third-party Google claim from proving invite ownership. [Google mailbox authority](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token)
+
 ## Package and release
 
 1. Verify the reviewed commit locally or in CI. Check the server and client runtime audit results. Apply migrations using `DATABASE_URL` set to the verified direct connection and `npm --prefix server run prisma:deploy`.

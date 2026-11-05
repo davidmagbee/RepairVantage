@@ -24,6 +24,10 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   if (!Number.isInteger(proxyHops) || proxyHops < 0) {
     throw new Error('TRUST_PROXY_HOPS must be a nonnegative integer');
   }
+  const otpDailyLimit = Number(env.AUTH_OTP_DAILY_LIMIT ?? 75);
+  if (!Number.isSafeInteger(otpDailyLimit) || otpDailyLimit < 1 || otpDailyLimit > 1_000_000) {
+    throw new Error('AUTH_OTP_DAILY_LIMIT must be an integer between 1 and 1000000');
+  }
   const authSecret = env.BETTER_AUTH_SECRET;
   if (!authSecret || authSecret.length < 32) {
     throw new Error('BETTER_AUTH_SECRET must contain at least 32 characters');
@@ -39,7 +43,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
     throw new Error('Configure RESEND_API_KEY and AUTH_EMAIL_FROM together');
   }
   return {
-    production, databaseUrl, origin, port, proxyHops, authSecret,
+    production, databaseUrl, origin, port, proxyHops, authSecret, otpDailyLimit,
     google: googleId && googleSecret ? { clientId: googleId, clientSecret: googleSecret } : undefined,
     email: resendKey && authEmailFrom ? { apiKey: resendKey, from: authEmailFrom } : undefined,
   };

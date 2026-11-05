@@ -270,6 +270,13 @@ model RateLimit {
   lastRequest BigInt
 }
 
+// App-level delivery limits have different retention than Better Auth's IP limits.
+model OtpThrottle {
+  key             String @id
+  count           Int
+  windowStartedAt BigInt
+}
+
 // Membership grants access without transferring project ownership.
 model ProjectMember {
   projectId String

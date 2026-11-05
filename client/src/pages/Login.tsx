@@ -19,9 +19,10 @@ export default function Login({ createAccount = false }: { createAccount?: boole
   const [sentTo, setSentTo] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(
-    params.has('error') ? 'Google sign-in could not be completed. Try again.' : '',
-  );
+  const googleError = params.get('error');
+  const [message, setMessage] = useState(googleError === 'google_email_not_authoritative'
+    ? 'Use an email code to sign in with this address.'
+    : googleError ? 'Google sign-in could not be completed. Try again or use an email code.' : '');
 
   useEffect(() => {
     const request = new AbortController();
