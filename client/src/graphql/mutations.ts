@@ -39,6 +39,18 @@ export const UPDATE_PROJECT_DETAILS = gql`
   }
 `;
 
+export const ARCHIVE_PROJECT = gql`
+  mutation ArchiveProject($id: ID!) {
+    archiveProject(id: $id) { id archivedAt }
+  }
+`;
+
+export const RESTORE_PROJECT = gql`
+  mutation RestoreProject($id: ID!) {
+    restoreProject(id: $id) { id archivedAt }
+  }
+`;
+
 export const ADD_PROJECT_COMMENT = gql`
   mutation AddProjectComment($projectId: ID!, $body: String!) {
     addProjectComment(projectId: $projectId, body: $body) {

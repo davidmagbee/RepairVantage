@@ -47,7 +47,11 @@ test('DateTime serializes database dates and rejects an invalid resolver result'
 test('project writes preserve unexpected persistence failures for the error boundary', async () => {
   const failure = new Error('Synthetic database outage');
   const user = { id: 'owner', email: 'owner@example.test', emailVerified: true };
-  const prisma = { project: { update: async () => { throw failure; } } };
+  const transaction = {
+    $queryRaw: async () => [{ userId: user.id, archivedAt: null }],
+    project: { update: async () => { throw failure; } },
+  };
+  const prisma = { $transaction: callback => callback(transaction) };
   await assert.rejects(
     resolvers.Mutation.updateProject(null, { id: 'project', input: { name: 'Changed' } }, { user, prisma }),
     error => error === failure,

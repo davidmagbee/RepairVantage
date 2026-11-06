@@ -24,9 +24,11 @@ export const GET_PROJECTS = gql`
   query GetProjects {
     projects {
       ...ProjectFields
+      archivedAt
     }
     sharedProjects {
       ...ProjectFields
+      archivedAt
     }
   }
   ${PROJECT_FIELDS}
@@ -36,6 +38,7 @@ export const GET_PROJECT_DETAILS = gql`
   query GetProjectDetails($id: ID!) {
     project(id: $id) {
       ...ProjectFields
+      archivedAt
       comments {
         ...CommentFields
       }
@@ -52,6 +55,7 @@ export interface Project {
   status: string;
   priority: string;
   canManage: boolean;
+  archivedAt: string | null;
 }
 
 export interface ProjectComment {

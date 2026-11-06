@@ -16,7 +16,10 @@ function ProjectCards({ projects }: { projects: Project[] }) {
             aria-label={project.name}
           >
             <h3 className="card-title group-hover:underline group-focus-visible:underline">{project.name}</h3>
-            <p className="badge badge-outline capitalize">{project.status.toLowerCase().replace(/_/g, ' ')}</p>
+            <div className="flex flex-wrap gap-2">
+              <span className="badge badge-outline capitalize">{project.status.toLowerCase().replace(/_/g, ' ')}</span>
+              {project.archivedAt && <span className="badge badge-neutral">Archived</span>}
+            </div>
             {project.description && <p className="line-clamp-3 break-words">{project.description}</p>}
           </Link>
         </li>

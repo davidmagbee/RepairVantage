@@ -27,6 +27,7 @@ export const typeDefs = `
     endDate: DateTime
     notes: String
     budget: Float
+    archivedAt: DateTime
     createdAt: DateTime!
     updatedAt: DateTime!
     tasks: [Task!]!
@@ -111,6 +112,8 @@ export const typeDefs = `
   type Mutation {
     createProject(input: ProjectInput!): Project!
     updateProject(id: ID!, input: ProjectUpdateInput!): Project!
+    archiveProject(id: ID!): Project!
+    restoreProject(id: ID!): Project!
     deleteProject(id: ID!): Boolean!
     createTask(input: TaskInput!): Task!
     inviteToProject(projectId: ID!, email: String!): ProjectInvitation!

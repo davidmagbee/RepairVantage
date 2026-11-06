@@ -33,3 +33,7 @@ REAL_API=1 npm test -- tests/projects.full-stack.spec.ts
 ```
 
 Production hosting must route API requests to Express and serve the React entry point for browser routes. The app expects same-origin API requests.
+
+## Archived projects
+
+Owners can archive or restore a project from its details page. An Archived badge appears on its card. Members can still read details and comments. The owner can revoke invitations, remove members, or unpublish Showcase while the project is archived.

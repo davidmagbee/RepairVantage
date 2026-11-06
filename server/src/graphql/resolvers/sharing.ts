@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { Prisma, Project } from '../../generated/prisma/client';
 import { GraphQLError } from 'graphql';
-import { authenticated, badInput, Context, missingProject, projectNotFound, sharedProjectFields, visibleProject } from '../policy';
+import { authenticated, badInput, Context, lockProject, projectNotFound, requireActiveOwnedProject, requireActiveProject, sharedProjectFields, visibleProject } from '../policy';
 
 const invitationDurationMs = 7 * 24 * 60 * 60 * 1000;
 const inviteFields = { id: true, email: true, expiresAt: true } as const;
@@ -36,15 +36,6 @@ async function ownedProject(projectId: string, context: Context) {
     projectNotFound();
   }
   return userId;
-}
-
-async function lockProject(prisma: Prisma.TransactionClient, projectId: string, ownerId?: string) {
-  const ownership = ownerId === undefined ? Prisma.empty : Prisma.sql`AND "userId" = ${ownerId}`;
-  // Serialize invitation and membership changes on the project row, even when no invite/member row exists yet.
-  const rows = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT "id" FROM "public"."Project" WHERE "id" = ${projectId} ${ownership} FOR UPDATE
-  `;
-  return rows.length === 1;
 }
 
 function showcaseProjection(record: Prisma.ProjectShowcaseGetPayload<{ select: typeof showcaseFields }> | null) {
@@ -98,7 +89,7 @@ export const sharingMutations = {
     const token = randomBytes(32).toString('base64url');
     const data = { id: randomUUID(), tokenHash: tokenHash(token), expiresAt: new Date(Date.now() + invitationDurationMs) };
     return context.prisma.$transaction(async prisma => {
-      if (!await lockProject(prisma, projectId, user.id)) projectNotFound();
+      await requireActiveOwnedProject(prisma, projectId, user.id);
       const member = await prisma.projectMember.findFirst({
         where: { projectId, user: { email: { equals: email, mode: 'insensitive' } } },
         select: { userId: true },
@@ -155,33 +146,50 @@ export const sharingMutations = {
       return true;
     });
   },
-  publishProject: async (_parent: unknown, args: { projectId: string; title: string; summary: string }, context: Context) => {
-    const { projectId } = args;
-    await ownedProject(projectId, context);
-    const copy = { title: textInput(args.title, 'Title', 120), summary: textInput(args.summary, 'Summary', 2000) };
-    const record = await context.prisma.projectShowcase.upsert({
-      where: { projectId },
-      create: { projectId, slug: randomBytes(24).toString('base64url'), ...copy },
-      update: copy,
-      select: showcaseFields,
-    }).catch(missingProject);
-    return showcaseProjection(record);
-  },
-  unpublishProject: async (_parent: unknown, { projectId }: { projectId: string }, context: Context) => {
-    const userId = await ownedProject(projectId, context);
-    const result = await context.prisma.projectShowcase.deleteMany({ where: { projectId, project: { userId } } });
-    return result.count > 0;
-  },
-  addProjectComment: (_parent: unknown, args: { projectId: string; body: string }, context: Context) => {
+  publishProject: (_parent: unknown, args: { projectId: string; title: string; summary: string }, context: Context) => {
     const userId = authenticated(context).id;
-    return context.prisma.projectComment.create({
-      data: {
-        body: textInput(args.body, 'Comment', 2000),
-        project: { connect: { id: args.projectId, ...visibleProject(userId) } },
-        author: { connect: { id: userId } },
-      },
-      select: commentFields,
-    }).catch(missingProject);
+    const { projectId } = args;
+    return context.prisma.$transaction(async prisma => {
+      await requireActiveOwnedProject(prisma, projectId, userId);
+      const copy = { title: textInput(args.title, 'Title', 120), summary: textInput(args.summary, 'Summary', 2000) };
+      const record = await prisma.projectShowcase.upsert({
+        where: { projectId },
+        create: { projectId, slug: randomBytes(24).toString('base64url'), ...copy },
+        update: copy,
+        select: showcaseFields,
+      });
+      return showcaseProjection(record);
+    });
+  },
+  unpublishProject: (_parent: unknown, { projectId }: { projectId: string }, context: Context) => {
+    const userId = authenticated(context).id;
+    return context.prisma.$transaction(async prisma => {
+      if (!await lockProject(prisma, projectId, userId)) projectNotFound();
+      const result = await prisma.projectShowcase.deleteMany({ where: { projectId, project: { userId } } });
+      return result.count > 0;
+    });
+  },
+  addProjectComment: (_parent: unknown, { projectId, body }: { projectId: string; body: string }, context: Context) => {
+    const userId = authenticated(context).id;
+    const text = textInput(body, 'Comment', 2000);
+    return context.prisma.$transaction(async prisma => {
+      // Refuse outsiders before taking a project lock, even if they know a private ID.
+      const visible = await prisma.project.findUnique({
+        where: { id: projectId, ...visibleProject(userId) }, select: { id: true },
+      });
+      if (!visible) projectNotFound();
+      const project = await lockProject(prisma, projectId);
+      if (!project) projectNotFound();
+      // Check membership after waiting for the parent lock so an earlier removal takes effect.
+      if (project.userId !== userId && !await prisma.projectMember.findUnique({
+        where: { projectId_userId: { projectId, userId } }, select: { userId: true },
+      })) projectNotFound();
+      requireActiveProject(project);
+      return prisma.projectComment.create({
+        data: { body: text, projectId, authorId: userId },
+        select: commentFields,
+      });
+    });
   },
 };
 

@@ -6,6 +6,8 @@ RepairVantage tracks repair work, the items required to complete it, and when it
 
 **Project** — A private repair effort with one owner. The data model can group tasks, part and tool assignments, and calendar events.
 
+**Archived project** — A project with edits and new comments frozen until the owner restores it. Existing sharing stays readable and the owner can reduce access.
+
 **Owner** — The user the project belongs to. Controls its details, status, priority, membership, and Showcase publication.
 
 **Member** — A verified user granted access to a project by invitation. Members can read shared details and comment.

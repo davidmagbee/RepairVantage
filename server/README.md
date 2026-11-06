@@ -48,6 +48,7 @@ Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefi
 
 - GraphQL accepts JSON POST from the configured origin. A verified session is required for workspace operations.
 - Project owners can create, update, delete, invite, remove members, and publish or unpublish Showcase links. Tasks follow project ownership.
+- Owners can archive and restore projects. Archived project content is read-only. Existing invitation acceptance, revocation, member removal, and unpublishing remain available.
 - Invitations bind a single-use link to the recipient's verified email. Links expire after seven days. Reissuing an invite revokes the previous link. Removing a member also revokes pending links for their email.
 - Members can read shared project fields and post private comments. Owner notes, budgets, tasks, invitation details, and the membership list remain private to the owner.
 - A Showcase URL exposes its explicit title, summary, publication time, and current project status to anyone with the link. Showcase links are unlisted. Unpublishing revokes the link, and republishing creates a new one.

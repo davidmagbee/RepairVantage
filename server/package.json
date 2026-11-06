@@ -12,7 +12,7 @@
     "prisma:studio": "prisma studio",
     "test": "node --test test/unit.test.cjs",
     "prisma:deploy": "prisma migrate deploy",
-    "test:integration": "node --test test/integration.test.cjs",
+    "test:integration": "node --test test/integration.test.cjs test/project-archive.test.cjs",
     "test:auth": "node --test test/auth.test.cjs"
   },
   "dependencies": {

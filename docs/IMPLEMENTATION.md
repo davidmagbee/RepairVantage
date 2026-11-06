@@ -29,7 +29,7 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 - Prefill current values. Trim the name and enforce the API's existing validation. Clearing description persists a null value. Cancel leaves stored data intact. [Existing validator](../server/src/graphql/resolvers/index.ts)
 - On save, update the detail and list views. Reload and confirm the same values. On failure, keep edits available and report the error. Cover empty name, description clearing, and denied member or unrelated writes through GraphQL.
 
-**Next slice** · An archived project is read-only and retains existing sharing, per the owner's decision. Existing members can still read the shared project and its comments. An already-published Showcase remains available at its URL. Keep archival separate from repair status.
+**Development branch** · Owners can archive and restore projects. Archival is separate from repair status. An archived project remains readable for the owner and existing members, including comments. Its published Showcase URL stays available.
 
 - Enforce the read-only rule at the API boundary for edits, new tasks, comments, publications, and invitations. Serialize archival with concurrent writes to the project and its child records. Exercise both write orderings on PostgreSQL.
 - Honor valid invitations issued before archival. Invitees join with read-only access until restore. Owners can still revoke invitations, remove members, and unpublish Showcase while archived.

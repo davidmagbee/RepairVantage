@@ -4,7 +4,7 @@ import type { FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProjectSharing from '../components/ProjectSharing';
 import { privateOperation } from '../graphql/client';
-import { ADD_PROJECT_COMMENT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
+import { ADD_PROJECT_COMMENT, ARCHIVE_PROJECT, RESTORE_PROJECT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
 import type { Project, ProjectWithComments } from '../graphql/queries';
 
@@ -127,6 +127,27 @@ function ProjectFieldControl({ project, field }: { project: Project; field: keyo
   );
 }
 
+function ProjectArchiveControl({ project }: { project: Project }) {
+  const archived = Boolean(project.archivedAt);
+  const [changeArchive, { loading, error }] = useMutation(archived ? RESTORE_PROJECT : ARCHIVE_PROJECT, {
+    context: privateOperation,
+    onError: () => {},
+  });
+  return (
+    <div className="space-y-2">
+      <button
+        className="btn btn-outline btn-sm"
+        type="button"
+        disabled={loading}
+        onClick={() => void changeArchive({ variables: { id: project.id } })}
+      >
+        {archived ? 'Restore project' : 'Archive project'}
+      </button>
+      {error && <p className="alert alert-error" role="alert">Could not {archived ? 'restore' : 'archive'} the project. Try again.</p>}
+    </div>
+  );
+}
+
 function ProjectComments({ project }: { project: ProjectWithComments }) {
   const [body, setBody] = useState('');
   const [addComment, { loading, error }] = useMutation(ADD_PROJECT_COMMENT, {
@@ -161,24 +182,28 @@ function ProjectComments({ project }: { project: ProjectWithComments }) {
             ))}
           </ul>
         )}
-        {error && <p className="alert alert-error" role="alert">Could not add your comment. Try again.</p>}
-        <form className="space-y-3" onSubmit={submit}>
-          <label className="form-control gap-1">
-            <span>Comment</span>
-            <textarea
-              className="textarea textarea-bordered"
-              rows={3}
-              maxLength={2000}
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              disabled={loading}
-              required
-            />
-          </label>
-          <button className="btn btn-primary" type="submit" disabled={loading || !body.trim()}>
-            {loading ? 'Posting…' : 'Post comment'}
-          </button>
-        </form>
+        {!project.archivedAt && (
+          <>
+            {error && <p className="alert alert-error" role="alert">Could not add your comment. Try again.</p>}
+            <form className="space-y-3" onSubmit={submit}>
+              <label className="form-control gap-1">
+                <span>Comment</span>
+                <textarea
+                  className="textarea textarea-bordered"
+                  rows={3}
+                  maxLength={2000}
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </label>
+              <button className="btn btn-primary" type="submit" disabled={loading || !body.trim()}>
+                {loading ? 'Posting…' : 'Post comment'}
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </section>
   );
@@ -222,17 +247,19 @@ export default function ProjectDetails() {
                 </div>
               </dl>
               {project.description && <p className="whitespace-pre-wrap break-words">{project.description}</p>}
-              {project.canManage && (
+              {project.archivedAt && <p role="status">This project is archived and read-only.</p>}
+              {project.canManage && !project.archivedAt && (
                 <>
                   <ProjectDetailsEditor key={project.id} project={project} />
                   <ProjectFieldControl key={`status-${project.id}`} project={project} field="status" />
                   <ProjectFieldControl key={`priority-${project.id}`} project={project} field="priority" />
                 </>
               )}
+              {project.canManage && <ProjectArchiveControl key={project.id} project={project} />}
             </div>
           </article>
           <ProjectComments key={project.id} project={project} />
-          {project.canManage && <ProjectSharing key={`sharing-${project.id}`} projectId={project.id} />}
+          {project.canManage && <ProjectSharing key={`sharing-${project.id}`} projectId={project.id} archived={Boolean(project.archivedAt)} />}
         </>
       )}
     </div>

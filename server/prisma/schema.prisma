@@ -45,6 +45,7 @@ model Project {
   priority    Priority       @default(MEDIUM)
   notes       String?
   budget      Float?
+  archivedAt  DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   tasks       Task[]

@@ -1,11 +1,11 @@
 import { Prisma, Project, Task, TaskStatus } from '../../generated/prisma/client';
 import { GraphQLScalarType, Kind } from 'graphql';
-import { authenticated, badInput, Context, missingProject, sharedProjectFields } from '../policy';
+import { authenticated, badInput, Context, lockProject, nameInput, projectNotFound, requireActiveOwnedProject, sharedProjectFields } from '../policy';
 import { sharingMutations, sharingProjectFields, sharingQueries } from './sharing';
 
 export type { Context } from '../policy';
 
-type ProjectInput = Omit<Prisma.ProjectUncheckedCreateInput, 'userId' | 'id' | 'createdAt' | 'updatedAt' | 'tasks' | 'parts' | 'tools' | 'events'>;
+type ProjectInput = Pick<Prisma.ProjectUncheckedCreateInput, 'name' | 'description' | 'status' | 'priority' | 'startDate' | 'endDate' | 'notes' | 'budget'>;
 type ProjectUpdateInput = Partial<ProjectInput>;
 type TaskInput = { projectId: string; name: string; description?: string | null; status?: TaskStatus; dueDate?: Date | null };
 
@@ -20,18 +20,24 @@ function ownerId(context: Context) {
   return authenticated(context).id;
 }
 
-function nameInput(name: string) {
-  const normalized = name.trim();
-  if (!normalized || normalized.length > 120) badInput('Name must be 1–120 characters');
-  return normalized;
-}
-
 function validateProject(input: ProjectUpdateInput) {
   if (input.name !== undefined && typeof input.name !== 'string') badInput('Name is required');
   if (input.description && input.description.length > 2000) badInput('Description must be at most 2,000 characters');
   if (input.notes && input.notes.length > 5000) badInput('Notes must be at most 5,000 characters');
   if (input.budget != null && input.budget < 0) badInput('Budget must be nonnegative');
   if (input.status === null || input.priority === null) badInput('Status and priority cannot be null');
+}
+
+function setProjectArchive(id: string, context: Context, archive: boolean) {
+  const userId = ownerId(context);
+  return context.prisma.$transaction(async prisma => {
+    const project = await lockProject(prisma, id, userId);
+    if (!project) projectNotFound();
+    const where = { id, userId };
+    // A repeated request leaves both the original archive timestamp and updatedAt intact.
+    if (archive === (project.archivedAt !== null)) return prisma.project.findUniqueOrThrow({ where });
+    return prisma.project.update({ where, data: { archivedAt: archive ? new Date() : null } });
+  });
 }
 
 export const resolvers = {
@@ -103,35 +109,41 @@ export const resolvers = {
     updateProject: (_parent: unknown, { id, input }: { id: string; input: ProjectUpdateInput }, context: Context) => {
       const userId = ownerId(context);
       validateProject(input);
-      return context.prisma.project.update({
-        // Scope the write itself so authorization cannot be invalidated between lookup and mutation.
-        where: { id, userId },
-        data: { ...input, name: input.name === undefined ? undefined : nameInput(input.name) },
-      }).catch(missingProject);
+      return context.prisma.$transaction(async prisma => {
+        await requireActiveOwnedProject(prisma, id, userId);
+        return prisma.project.update({
+          where: { id, userId },
+          data: { ...input, name: input.name === undefined ? undefined : nameInput(input.name) },
+        });
+      });
     },
-    deleteProject: async (_parent: unknown, { id }: { id: string }, context: Context) => {
-      await context.prisma.project.delete({ where: { id, userId: ownerId(context) } }).catch(missingProject);
-      return true;
+    archiveProject: (_parent: unknown, { id }: { id: string }, context: Context) => setProjectArchive(id, context, true),
+    restoreProject: (_parent: unknown, { id }: { id: string }, context: Context) => setProjectArchive(id, context, false),
+    deleteProject: (_parent: unknown, { id }: { id: string }, context: Context) => {
+      const userId = ownerId(context);
+      return context.prisma.$transaction(async prisma => {
+        await requireActiveOwnedProject(prisma, id, userId);
+        await prisma.project.delete({ where: { id, userId } });
+        return true;
+      });
     },
     createTask: (_parent: unknown, { input }: { input: TaskInput }, context: Context) => {
       const userId = ownerId(context);
       const { projectId, ...fields } = input;
       if (fields.description && fields.description.length > 2000) badInput('Description must be at most 2,000 characters');
       if (fields.status === null) badInput('Status cannot be null');
-      return context.prisma.task.create({
-        data: {
-          ...fields,
-          name: nameInput(input.name),
-          project: { connect: { id: projectId, userId } },
-          user: { connect: { id: userId } },
-        },
-      }).catch(missingProject);
+      return context.prisma.$transaction(async prisma => {
+        await requireActiveOwnedProject(prisma, projectId, userId);
+        return prisma.task.create({
+          data: { ...fields, name: nameInput(input.name), projectId, userId },
+        });
+      });
     },
   },
 
   Project: {
     ...sharingProjectFields,
-    // Member reads omit private scalar fields at the database boundary. Scope nested tasks here.
+    // Owners retain access-reduction controls even when an archived project freezes edits.
     canManage: (project: Project, _args: unknown, context: Context) => project.userId === ownerId(context),
     tasks: (project: Project, _args: unknown, context: Context) =>
       context.prisma.task.findMany({ where: { projectId: project.id, project: { userId: ownerId(context) } } }),

@@ -27,9 +27,12 @@ Google sign-in requires a verified Gmail or Workspace mailbox. Other addresses c
 4. Stage the release with `vercel deploy --prod --skip-domain`, then inspect its build and routes. Promote the verified production deployment to the canonical origin. The configured `APP_ORIGIN` is required for authentication and GraphQL writes, so exercise those flows at the canonical URL. [Vercel promotion and rollback](https://vercel.com/docs/cli/deploying-from-cli)
 5. Record the source revision, public URL, migration state, and verification. For a failed release with a previous working deployment, roll back the Vercel deployment and assess schema compatibility separately.
 
+Apply the additive project archive migration before staging a build that queries `archivedAt`. Once a project is archived, use an archive-aware deployment for rollback so the read-only policy continues to apply.
+
 ## Release QA
 
 - Request `/`, `/health`, and `/ready`. Open and refresh a nested client route. Confirm GraphQL and auth paths receive API responses.
 - In clean browser sessions, complete Google consent and an emailed sign-in code. Verify logout and that a signed-out browser cannot open the private workspace. Test both providers with the same verified address before claiming account linking.
 - Create a real repair project and reopen it from the card padding. Save a status change, then save a different priority and reload. Verify both values persisted. Sign out and back in to check project access. Invite a second verified account and check that it can read and comment. Remove it and retry the private URL and old invite.
 - Publish a Showcase title and summary. Open the link signed out and check the public fields. Unpublish it and verify the URL stops resolving.
+- Archive a project with a published Showcase and a pending invite. Verify archived reads and access revocation still work, content changes are rejected, and restore reopens edits.

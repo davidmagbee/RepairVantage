@@ -39,7 +39,7 @@ function ShareLink({ label, url }: { label: string; url: string }) {
 }
 
 /** Owner-only controls. An invitation and a publication are separate grants. */
-export default function ProjectSharing({ projectId }: { projectId: string }) {
+export default function ProjectSharing({ projectId, archived }: { projectId: string; archived: boolean }) {
   const { data, error, loading, refetch } = useQuery<ProjectSharingData>(GET_PROJECT_SHARING, {
     variables: { projectId },
     fetchPolicy: 'no-cache',
@@ -107,14 +107,18 @@ export default function ProjectSharing({ projectId }: { projectId: string }) {
 
       <section aria-labelledby="invite-heading" className="space-y-3">
         <h3 id="invite-heading" className="font-bold">Invite people</h3>
-        <p>Invitees can read the project and leave comments after they sign in with the invited address.</p>
-        <form className="flex flex-wrap items-end gap-2" onSubmit={createInvitation}>
-          <label className="form-control flex-1">
-            <span className="label-text mb-1">Email address</span>
-            <input className="input input-bordered" name="email" type="email" autoComplete="email" maxLength={254} required />
-          </label>
-          <button type="submit" className="btn btn-primary" disabled={pending}>Create invite link</button>
-        </form>
+        {archived ? <p>Existing invitation links can grant read-only access.</p> : (
+          <>
+            <p>Invitees can read the project and leave comments after they sign in with the invited address.</p>
+            <form className="flex flex-wrap items-end gap-2" onSubmit={createInvitation}>
+              <label className="form-control flex-1">
+                <span className="label-text mb-1">Email address</span>
+                <input className="input input-bordered" name="email" type="email" autoComplete="email" maxLength={254} required />
+              </label>
+              <button type="submit" className="btn btn-primary" disabled={pending}>Create invite link</button>
+            </form>
+          </>
+        )}
         {invitation && <ShareLink key={invitation.url} label={`Invitation for ${invitation.email}`} url={invitation.url} />}
         {data.projectInvites.length > 0 && (
           <ul aria-label="Pending invitations" className="divide-y divide-base-300">
@@ -151,7 +155,7 @@ export default function ProjectSharing({ projectId }: { projectId: string }) {
           <>
             <ShareLink key={showcase.slug} label="Public Showcase link" url={new URL(`/showcase/${encodeURIComponent(showcase.slug)}`, window.location.origin).href} />
             <div className="flex flex-wrap gap-2">
-              {!editing && <button type="button" className="btn btn-outline btn-sm" onClick={() => setEditing(true)} disabled={pending}>Edit Showcase</button>}
+              {!archived && !editing && <button type="button" className="btn btn-outline btn-sm" onClick={() => setEditing(true)} disabled={pending}>Edit Showcase</button>}
               <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => void change(async () => {
                 await unpublish({ variables: { projectId } });
                 setEditing(false);
@@ -159,7 +163,7 @@ export default function ProjectSharing({ projectId }: { projectId: string }) {
             </div>
           </>
         )}
-        {(!showcase || editing) && (
+        {!archived && (!showcase || editing) && (
           <form className="space-y-3" onSubmit={publishShowcase}>
             <label className="form-control">
               <span className="label-text mb-1">Public title</span>
