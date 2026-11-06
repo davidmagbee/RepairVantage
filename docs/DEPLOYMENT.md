@@ -36,3 +36,4 @@ Apply the additive project archive migration before staging a build that queries
 - Create a real repair project and reopen it from the card padding. Save a status change, then save a different priority and reload. Verify both values persisted. Sign out and back in to check project access. Invite a second verified account and check that it can read and comment. Remove it and retry the private URL and old invite.
 - Publish a Showcase title and summary. Open the link signed out and check the public fields. Unpublish it and verify the URL stops resolving.
 - Archive a project with a published Showcase and a pending invite. Verify archived reads and access revocation still work, content changes are rejected, and restore reopens edits.
+- Use a disposable project for permanent deletion QA. Cancel the prompt first, then confirm and check that the project and its Showcase link are gone.

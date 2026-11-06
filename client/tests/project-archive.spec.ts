@@ -71,6 +71,7 @@ test('an owner can archive and restore without losing existing sharing controls'
   await expect(page.locator('dd', { hasText: /^in progress$/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit details' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save priority' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete project permanently' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Post comment' })).toHaveCount(0);
   await expect(page.getByText('Steps are measured.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Create invite link' })).toHaveCount(0);
@@ -97,4 +98,5 @@ test('a member can read an archived project and its comments without editing it'
   await expect(page.getByText('Steps are measured.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Post comment' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Restore project' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete project permanently' })).toHaveCount(0);
 });

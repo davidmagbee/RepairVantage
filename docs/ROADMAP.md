@@ -20,7 +20,7 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. The 
 
 | Phase | Scope | Exit |
 | --- | --- | --- |
-| 1. Project lifecycle · Current | Core editing and sharing are live. Archive and restore are on the development branch. | Verify archived writes are denied, existing sharing stays readable, and restoring reopens edits. |
+| 1. Project lifecycle · In development | Core editing and sharing are live. Archive, restore, and confirmed permanent deletion are on the development branch. | Verify archived writes are denied, restore reopens edits, and deletion requires explicit confirmation. |
 | 2. Tasks · In development | Owner CRUD, the status board, and the keyboard edit path are on the development branch. Assignment to project members comes next. | Verify owner changes persist, assignees can edit only their own tasks, and archived tasks reject writes. |
 | 3. Parts and tools · Planned | Add owner-scoped catalogs and project or task assignments. | Define ownership and quantity semantics. Prevent cross-owner links and conflicting allocations. |
 | 4. Dependencies and scheduling · Planned | Add prerequisite rules, then calendar and Gantt views over project and task dates. | Reject invalid edges and cycles. Agree on time zones, all-day events, and which dates drive the timeline. |
@@ -28,4 +28,4 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. The 
 
 **Every slice** · Test and refine the workflow, update its documentation, and record release evidence. Work toward 100% line coverage across executable application code and report branch coverage alongside it. [Engineering runbook](ENGINEERING.md) · [Current CI](../.github/workflows/verify.yml)
 
-**Open decisions** · Permanent deletion. Task transitions, assignment, and viewer access. Inventory and schedule semantics. Report calculations and export rules. Record each decision before starting its first dependent slice. [Implementation guide](IMPLEMENTATION.md)
+**Open decisions** · Inventory and schedule semantics beyond the agreed first slices. Report calculations and export rules. Record each decision before starting its first dependent slice. [Implementation guide](IMPLEMENTATION.md)

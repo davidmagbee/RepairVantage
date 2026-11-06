@@ -38,6 +38,8 @@ Production hosting must route API requests to Express and serve the React entry 
 
 Owners can archive or restore a project from its details page. An Archived badge appears on its card. Members can still read details and comments. The owner can revoke invitations, remove members, or unpublish Showcase while the project is archived.
 
+To permanently delete an active project, select **Delete project permanently** and confirm its name in the prompt. Deletion removes related work and sharing. Restore an archived project before deleting it.
+
 ## Project tasks
 
 On Project Details, select **Show tasks** to open the owner task board. Use **Add task** to create one, **Edit** to change its fields, and **Delete** to open a permanent deletion confirmation. Move a task between status columns by dragging it, or open **Edit** and select a status with the keyboard or touch. The task deadline field uses your browser’s local time. Owners can still read the board after archiving a project.

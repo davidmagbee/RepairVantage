@@ -1,11 +1,11 @@
 import { useMutation, useQuery } from '@apollo/client';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProjectSharing from '../components/ProjectSharing';
 import ProjectTasks from '../components/ProjectTasks';
 import { privateOperation } from '../graphql/client';
-import { ADD_PROJECT_COMMENT, ARCHIVE_PROJECT, RESTORE_PROJECT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
+import { ADD_PROJECT_COMMENT, ARCHIVE_PROJECT, DELETE_PROJECT, RESTORE_PROJECT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
 import type { Project, ProjectWithComments } from '../graphql/queries';
 
@@ -149,6 +149,30 @@ function ProjectArchiveControl({ project }: { project: Project }) {
   );
 }
 
+function ProjectDeleteControl({ project }: { project: Project }) {
+  const navigate = useNavigate();
+  const [deleteProject, { loading, error }] = useMutation<{ deleteProject: boolean }>(DELETE_PROJECT, {
+    context: privateOperation,
+    onCompleted: ({ deleteProject: deleted }) => {
+      if (deleted) void navigate('/projects', { replace: true });
+    },
+    onError: () => {},
+  });
+  return (
+    <div className="space-y-2">
+      <button className="btn btn-error btn-outline btn-sm" type="button" disabled={loading} onClick={() => {
+        // Require a fresh confirmation before every permanent deletion attempt.
+        if (window.confirm(`Permanently delete “${project.name}” and its related work and sharing? This cannot be undone.`)) {
+          void deleteProject({ variables: { id: project.id } });
+        }
+      }}>
+        Delete project permanently
+      </button>
+      {error && <p className="alert alert-error" role="alert">Could not delete the project. Try again.</p>}
+    </div>
+  );
+}
+
 function ProjectComments({ project }: { project: ProjectWithComments }) {
   const [body, setBody] = useState('');
   const [addComment, { loading, error }] = useMutation(ADD_PROJECT_COMMENT, {
@@ -280,6 +304,7 @@ export default function ProjectDetails() {
           )}
           <ProjectComments key={project.id} project={project} />
           {project.canManage && <ProjectSharing key={`sharing-${project.id}`} projectId={project.id} archived={Boolean(project.archivedAt)} />}
+          {project.canManage && !project.archivedAt && <ProjectDeleteControl key={`delete-${project.id}`} project={project} />}
         </>
       )}
     </div>

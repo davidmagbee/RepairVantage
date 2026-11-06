@@ -51,6 +51,12 @@ export const RESTORE_PROJECT = gql`
   }
 `;
 
+export const DELETE_PROJECT = gql`
+  mutation DeleteProject($id: ID!) {
+    deleteProject(id: $id)
+  }
+`;
+
 export const ADD_PROJECT_COMMENT = gql`
   mutation AddProjectComment($projectId: ID!, $body: String!) {
     addProjectComment(projectId: $projectId, body: $body) {
