@@ -1,4 +1,4 @@
-import { Prisma, Project, Task, TaskStatus } from '@prisma/client';
+import { Prisma, Project, Task, TaskStatus } from '../../generated/prisma/client';
 import { GraphQLScalarType, Kind } from 'graphql';
 import { authenticated, badInput, Context, missingProject, sharedProjectFields } from '../policy';
 import { sharingMutations, sharingProjectFields, sharingQueries } from './sharing';

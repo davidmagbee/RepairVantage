@@ -28,7 +28,7 @@ jobs:
           --health-retries 10
     env:
       # Disposable service container scoped to this job. No hosted credentials.
-      DATABASE_URL: postgresql://postgres:ci-only@localhost:5432/repairvantage_test
+      DIRECT_DATABASE_URL: postgresql://postgres:ci-only@localhost:5432/repairvantage_test
       TEST_DATABASE_URL: postgresql://postgres:ci-only@localhost:5432/repairvantage_test
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6

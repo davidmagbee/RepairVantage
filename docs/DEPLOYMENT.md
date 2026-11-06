@@ -6,11 +6,11 @@ Vercel project `davidmagbees-projects/repairvantage` serves the Vite assets and 
 
 ## Configure sign-in
 
-Set `APP_ORIGIN` to `https://repairvantage.vercel.app`. Configure `BETTER_AUTH_SECRET`, `DATABASE_URL`, and `TRUST_PROXY_HOPS` per the [server runbook](../server/README.md). Configure each sign-in method in Vercel Production:
+Set `APP_ORIGIN` to `https://repairvantage.davidmagbee.com`. Configure `BETTER_AUTH_SECRET`, `DATABASE_URL`, and `TRUST_PROXY_HOPS` per the [server runbook](../server/README.md). Configure each sign-in method in Vercel Production:
 
 | Setting | Source |
 | --- | --- |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth Web client. For the initial origin register `https://repairvantage.vercel.app/api/auth/callback/google` exactly. [Google setup](https://developers.google.com/identity/protocols/oauth2/web-server) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth Web client. Register `https://repairvantage.davidmagbee.com/api/auth/callback/google` exactly. [Google setup](https://developers.google.com/identity/protocols/oauth2/web-server) |
 | `RESEND_API_KEY`, `AUTH_EMAIL_FROM` | A sending key scoped to the verified `auth.davidmagbee.com` domain. The sender is `login@auth.davidmagbee.com`. [Resend domain setup](https://resend.com/docs/dashboard/domains/introduction) |
 
 Each provider activates independently when its settings are complete. `/api/auth/providers` reports availability. `/ready` reports `auth_setup_required` until at least one method is configured. Redeploy after changing Vercel environment variables, then verify each provider through the browser. Use a separate test database and provider configuration for hosted staging if one is needed. Keep credentials in the host's secret store.
@@ -19,9 +19,9 @@ Google sign-in requires a verified Gmail or Workspace mailbox. Other addresses c
 
 ## Package and release
 
-1. Verify the reviewed commit locally or in CI. Check the server and client runtime audit results. Apply migrations using `DATABASE_URL` set to the verified direct connection and `npm --prefix server run prisma:deploy`.
+1. Verify the reviewed commit locally or in CI. Check the server and client runtime audit results. Apply migrations using `DIRECT_DATABASE_URL` set to the verified direct connection and `npm --prefix server run prisma:deploy`.
 2. Run `node scripts/package-vercel.mjs <reviewed-commit>`. The command prints the generated directory. Inspect the source revision, bundled assets and server files. The packager reads the committed tree.
-3. Link only the generated directory to the verified Vercel project. From that directory use `vercel project inspect --non-interactive` and confirm the owner, project, and Node runtime before deploying. Use the remote build so Prisma's runtime engine is produced for Vercel's Linux environment. [Vercel Express deployment](https://vercel.com/docs/frameworks/backend/express)
+3. Link only the generated directory to the verified Vercel project. From that directory use `vercel project inspect --non-interactive` and confirm the owner, project, and Node runtime before deploying. The package includes the compiled Prisma client. The Vercel build does not generate the client or run migrations. [Vercel Express deployment](https://vercel.com/docs/frameworks/backend/express)
 4. Stage the release with `vercel deploy --prod --skip-domain`, then inspect its build and routes. Promote the verified production deployment to the canonical origin. The configured `APP_ORIGIN` is required for authentication and GraphQL writes, so exercise those flows at the canonical URL. [Vercel promotion and rollback](https://vercel.com/docs/cli/deploying-from-cli)
 5. Record the source revision, public URL, migration state, and verification. For a failed release with a previous working deployment, roll back the Vercel deployment and assess schema compatibility separately.
 

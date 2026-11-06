@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, cpSync, existsSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,7 @@ const inputs = [
   'client/src', 'client/postcss.config.js', 'client/tailwind.config.js',
   'client/tsconfig.json', 'client/tsconfig.app.json', 'client/tsconfig.node.json', 'client/vite.config.ts',
   'server/package.json', 'server/package-lock.json', 'server/src', 'server/tsconfig.json',
-  'server/prisma/schema.prisma', 'scripts/vercel',
+  'server/prisma.config.ts', 'server/prisma/schema.prisma', 'scripts/vercel',
 ];
 
 // Reject tracked symlinks and common credential files before extracting the build inputs.
@@ -54,8 +54,7 @@ try {
   const deployFiles = join(scratch, 'scripts', 'vercel');
   for (const name of ['index.js', 'vercel.json']) copyFileSync(join(deployFiles, name), join(artifact, name));
   for (const name of ['package.json', 'package-lock.json']) copyFileSync(join(server, name), join(artifact, name));
-  mkdirSync(join(artifact, 'prisma'));
-  copyFileSync(join(server, 'prisma', 'schema.prisma'), join(artifact, 'prisma', 'schema.prisma'));
+  // Prisma 7's generated client is compiled into dist. The runtime needs no schema or migration CLI.
   cpSync(join(server, 'dist'), join(artifact, 'dist'), { recursive: true, filter: path => !path.endsWith('.map') });
   cpSync(join(client, 'dist'), join(artifact, 'public'), {
     recursive: true,
@@ -68,7 +67,7 @@ try {
     },
   });
 
-  for (const entry of ['public/index.html', 'dist/index.js', 'dist/identity.mjs']) {
+  for (const entry of ['public/index.html', 'dist/index.js', 'dist/identity.mjs', 'dist/generated/prisma/client.js']) {
     if (!existsSync(join(artifact, entry))) throw new Error(`Missing deployment entry: ${entry}`);
   }
   console.log(`Prepared ${revision} in ${artifact}`);

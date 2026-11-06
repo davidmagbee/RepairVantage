@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { Prisma, Project } from '@prisma/client';
+import { Prisma, Project } from '../../generated/prisma/client';
 import { GraphQLError } from 'graphql';
 import { authenticated, badInput, Context, missingProject, projectNotFound, sharedProjectFields, visibleProject } from '../policy';
 

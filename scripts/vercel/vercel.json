@@ -1,12 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "express",
-  "installCommand": "npm ci --include=dev --no-audit --no-fund",
-  "buildCommand": "npm run prisma:generate",
+  "installCommand": "npm ci --omit=dev --omit=optional --no-audit --no-fund",
+  "buildCommand": "node --check index.js",
   "trailingSlash": false,
   "functions": {
     "index.js": {
-      "includeFiles": "{public/index.html,node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node}"
+      "includeFiles": "public/index.html"
     }
   },
   "headers": [

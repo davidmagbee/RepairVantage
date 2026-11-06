@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { createHash, randomBytes, randomUUID } = require('node:crypto');
 const { test } = require('node:test');
 const { ApolloServer } = require('@apollo/server');
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('../dist/db');
 const { resolvers } = require('../dist/graphql/resolvers');
 const { typeDefs } = require('../dist/graphql/schema');
 
@@ -43,7 +43,7 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
   assert.match(url.protocol, /^postgres(?:ql)?:$/);
   assert.match(url.hostname, /^(localhost|127\.0\.0\.1|\[::1\])$/);
   assert.match(url.pathname, /_test$/);
-  const prisma = new PrismaClient({ datasourceUrl: url.toString() });
+  const prisma = createPrismaClient(url.toString());
   const apollo = new ApolloServer({ typeDefs, resolvers });
   const userIds = [];
   t.after(async () => {

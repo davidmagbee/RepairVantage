@@ -1,16 +1,16 @@
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express4';
-import { PrismaClient } from '@prisma/client';
 import express, { ErrorRequestHandler } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { readConfig } from './config';
+import { createPrismaClient } from './db';
 import { Context, resolvers } from './graphql/resolvers';
 import { typeDefs } from './graphql/schema';
 
 type CodeSender = (email: string, code: string) => Promise<void>;
 
 export function createApplication(config: ReturnType<typeof readConfig>, deliverCode?: CodeSender) {
-  const prisma = new PrismaClient({ datasourceUrl: config.databaseUrl });
+  const prisma = createPrismaClient(config.databaseUrl);
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', config.proxyHops);

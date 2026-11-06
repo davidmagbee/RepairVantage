@@ -26,7 +26,7 @@ Build and lint cover compile-time behavior. A passing build says nothing about a
 With a dedicated loopback database whose name ends in `_test`, explicitly set `TEST_DATABASE_URL` and run:
 
 ```sh
-DATABASE_URL="$TEST_DATABASE_URL" npm --prefix server run prisma:deploy
+DIRECT_DATABASE_URL="$TEST_DATABASE_URL" npm --prefix server run prisma:deploy
 npm --prefix server test
 npm --prefix server run test:integration
 npm --prefix server run test:auth
