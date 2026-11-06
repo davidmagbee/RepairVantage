@@ -23,14 +23,14 @@ async function reserveCodeSend(prisma: PrismaClient, email: string, config: Iden
   const day = Math.floor(now / 86_400_000) * 86_400_000;
   await prisma.$transaction(async tx => {
     const allowed = await tx.$executeRaw`
-      INSERT INTO "OtpThrottle" ("key", "count", "windowStartedAt")
+      INSERT INTO "public"."OtpThrottle" ("key", "count", "windowStartedAt")
       VALUES (${`recipient:${recipient}`}, 1, ${BigInt(now)})
       ON CONFLICT ("key") DO UPDATE SET "windowStartedAt" = EXCLUDED."windowStartedAt"
       WHERE "OtpThrottle"."windowStartedAt" <= EXCLUDED."windowStartedAt" - 60000`;
     if (!allowed) throw new APIError('TOO_MANY_REQUESTS', { message: 'Wait a minute before requesting another code.' });
 
     const budget = await tx.$executeRaw`
-      INSERT INTO "OtpThrottle" ("key", "count", "windowStartedAt")
+      INSERT INTO "public"."OtpThrottle" ("key", "count", "windowStartedAt")
       VALUES ('daily-budget', 1, ${BigInt(day)})
       ON CONFLICT ("key") DO UPDATE
       SET "count" = CASE WHEN "OtpThrottle"."windowStartedAt" < EXCLUDED."windowStartedAt" THEN 1 ELSE "OtpThrottle"."count" + 1 END,

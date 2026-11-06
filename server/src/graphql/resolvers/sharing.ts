@@ -42,7 +42,7 @@ async function lockProject(prisma: Prisma.TransactionClient, projectId: string, 
   const ownership = ownerId === undefined ? Prisma.empty : Prisma.sql`AND "userId" = ${ownerId}`;
   // Serialize invitation and membership changes on the project row, even when no invite/member row exists yet.
   const rows = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT "id" FROM "Project" WHERE "id" = ${projectId} ${ownership} FOR UPDATE
+    SELECT "id" FROM "public"."Project" WHERE "id" = ${projectId} ${ownership} FOR UPDATE
   `;
   return rows.length === 1;
 }

@@ -1,9 +1,8 @@
+import { publicDatabaseUrl } from './db-url';
+
 export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   const production = env.NODE_ENV === 'production';
-  const databaseUrl = env.DATABASE_URL;
-  if (!databaseUrl || !/^postgres(?:ql)?:\/\//.test(databaseUrl)) {
-    throw new Error('DATABASE_URL must be a PostgreSQL connection URL');
-  }
+  const databaseUrl = publicDatabaseUrl(env.DATABASE_URL ?? '', 'DATABASE_URL');
 
   const origin = env.APP_ORIGIN ?? (production ? '' : 'http://localhost:5173');
   let appOrigin: URL;

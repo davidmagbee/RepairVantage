@@ -7,6 +7,6 @@ export function createPrismaClient(connectionString: string) {
     connectionString,
     connectionTimeoutMillis: 5_000,
     enableChannelBinding: true,
-  });
+  }, { schema: 'public' });
   return new PrismaClient({ adapter });
 }
