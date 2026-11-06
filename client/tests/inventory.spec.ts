@@ -9,6 +9,8 @@ test('records parts and project quantities, then shows the resulting stock short
   let failInventory = false;
   let failWrite = true;
   let failRequirement = true;
+  let failRequirementsRead = true;
+  let archivedAt: string | null = null;
   const inventory = () => item ? [{ __typename: 'InventoryItem', ...item, required: quantity, shortfall: Math.max(quantity - item.onHand, 0) }] : [];
   const requirements = () => item && quantity ? [{ __typename: 'ProjectRequirement', itemId: item.id, name: item.name, kind: item.kind, quantity }] : [];
   await page.route('**/api/auth/get-session', route => route.fulfill({
@@ -34,9 +36,14 @@ test('records parts and project quantities, then shows the resulting stock short
       case 'UpdateInventoryItem':
         item = { id: variables.id, kind: variables.kind, name: variables.name, onHand: variables.onHand };
         return data({ updateInventoryItem: inventory()[0] });
-      case 'GetProjectDetails': return data({ project });
+      case 'GetProjectDetails': return data({ project: { ...project, archivedAt } });
       case 'ProjectSharing': return data({ project: { showcase: null }, projectMembers: [], projectInvites: [] });
-      case 'GetProjectRequirements': return data({ projectRequirements: requirements() });
+      case 'GetProjectRequirements':
+        if (failRequirementsRead) {
+          failRequirementsRead = false;
+          return route.fulfill({ json: { errors: [{ message: 'Requirements unavailable' }] } });
+        }
+        return data({ projectRequirements: requirements() });
       case 'SetProjectRequirement':
         if (failRequirement) {
           failRequirement = false;
@@ -54,6 +61,9 @@ test('records parts and project quantities, then shows the resulting stock short
   });
 
   await page.goto('/projects/porch');
+  await page.getByRole('button', { name: 'Show requirements' }).click();
+  await expect(page.getByRole('alert')).toContainText('Could not load inventory requirements');
+  await page.getByRole('button', { name: 'Hide requirements' }).click();
   await page.getByRole('button', { name: 'Show requirements' }).click();
   await expect(page.getByText('Add parts or tools in', { exact: false })).toBeVisible();
   failInventory = true;
@@ -87,8 +97,17 @@ test('records parts and project quantities, then shows the resulting stock short
   await page.getByRole('button', { name: 'Save item' }).click();
   await expect(row.getByRole('cell').nth(4)).toHaveText('0');
 
+  archivedAt = '2026-11-06T15:00:00.000Z';
   await checkpointCoverage(page);
   await page.goto('/projects/porch');
+  await page.getByRole('button', { name: 'Show requirements' }).click();
+  await expect(page.getByText('Deck screws · 4')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save requirement' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Remove Deck screws' })).toHaveCount(0);
+
+  archivedAt = null;
+  await checkpointCoverage(page);
+  await page.reload();
   await page.getByRole('button', { name: 'Show requirements' }).click();
   await page.getByRole('button', { name: 'Remove Deck screws' }).click();
   await expect(page.getByText('No inventory requirements yet.')).toBeVisible();

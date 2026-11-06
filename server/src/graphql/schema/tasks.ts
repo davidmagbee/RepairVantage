@@ -8,6 +8,8 @@ export const taskTypeFields = `
     description: String
     status: TaskStatus!
     dueDate: DateTime
+    estimatedHours: Float
+    actualHours: Float
     """Completion time recorded when the task enters COMPLETED. Older completed tasks may have no recorded time."""
     completedDate: DateTime
     createdAt: DateTime!
@@ -21,6 +23,8 @@ export const taskTypeFields = `
     description: String
     status: TaskStatus
     dueDate: DateTime
+    estimatedHours: Float
+    actualHours: Float
     projectId: ID!
   }
 
@@ -29,6 +33,8 @@ export const taskTypeFields = `
     description: String
     status: TaskStatus
     dueDate: DateTime
+    estimatedHours: Float
+    actualHours: Float
   }
 `;
 

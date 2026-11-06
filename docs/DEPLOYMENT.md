@@ -27,7 +27,7 @@ Google sign-in requires a verified Gmail or Workspace mailbox. Other addresses c
 4. Stage the release with `vercel deploy --prod --skip-domain`, then inspect its build and routes. Promote the verified production deployment to the canonical origin. The configured `APP_ORIGIN` is required for authentication and GraphQL writes, so exercise those flows at the canonical URL. [Vercel promotion and rollback](https://vercel.com/docs/cli/deploying-from-cli)
 5. Record the source revision, public URL, migration state, and verification. For a failed release with a previous working deployment, roll back the Vercel deployment and assess schema compatibility separately.
 
-Apply the additive archive and owner inventory migrations before staging builds that query those fields. Readiness checks require both migrations. Once a project is archived, use an archive-aware deployment for rollback so the read-only policy continues to apply.
+Apply the additive archive, owner inventory, and project expense migrations before staging builds that query those fields. Readiness checks require all three migrations. Once a project is archived, use an archive-aware deployment for rollback so the read-only policy continues to apply.
 
 ## Release QA
 

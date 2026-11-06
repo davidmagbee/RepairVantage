@@ -56,6 +56,6 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 
 ## Reporting, export, and documentation
 
-1. Record actual expenses in USD and distinguish actual task time from estimates. Start with an owner-scoped summary reconciled to a known PostgreSQL fixture. Add search and filters with stable ordering and explicit access rules.
-2. Export the filtered report as CSV. Cover column order, quoting, Unicode, formula-like user text, and the same authorization as the source report. Add PDF after the report fields and format settle.
+1. Owners can record actual USD expenses in whole cents and see estimated and actual task hours in **Project report**. Assignees can record hours on their assigned tasks. Archive preserves reports and freezes writes.
+2. Download the current report as CSV. Use **Print / Save as PDF** to create a PDF through the browser print dialog. Search and filtering remain separate slices.
 3. With each slice, update setup instructions, API contracts, usage steps, and the release evidence needed to demonstrate it. Document migration and rollback implications when schema changes ship. [Setup](../README.md) · [API runbook](../server/README.md) · [Deployment](DEPLOYMENT.md)

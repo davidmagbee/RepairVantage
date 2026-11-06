@@ -9,6 +9,7 @@ import NewProject from './pages/NewProject';
 import NotFound from './pages/NotFound';
 import ProjectDetails from './pages/ProjectDetails';
 import ProjectList from './pages/ProjectList';
+import ProjectReport from './pages/ProjectReport';
 import Schedule from './pages/Schedule';
 import Showcase from './pages/Showcase';
 
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="inventory" element={<Inventory />} />
           <Route path="schedule" element={<Schedule />} />
           <Route path=":id" element={<ProjectDetails />} />
+          <Route path=":id/report" element={<ProjectReport />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFound />} />

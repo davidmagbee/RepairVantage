@@ -49,11 +49,16 @@ function TaskEditor({ task, pending, onSave, onCancel }: {
     }
     const description = String(form.get('description'));
     const savedDescription = (task?.description ?? '').replace(/\r\n?/g, '\n');
+    const estimatedHours = form.get('estimatedHours');
+    const actualHours = form.get('actualHours');
     onSave({
       name,
       description: task && description === savedDescription ? task.description : description.trim() || null,
       status: form.get('status') as TaskStatus,
       dueDate,
+      // Empty fields clear recorded time. A typed zero remains a recorded value.
+      estimatedHours: estimatedHours ? Number(estimatedHours) : null,
+      actualHours: actualHours ? Number(actualHours) : null,
     });
   }
 
@@ -79,6 +84,16 @@ function TaskEditor({ task, pending, onSave, onCancel }: {
           <label className="form-control gap-1">
             <span>Due date and time (local, optional)</span>
             <input className="input input-bordered" type="datetime-local" name="dueDate" defaultValue={savedDue} max="9999-12-31T23:59" />
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <label className="form-control gap-1">
+            <span>Estimated hours (optional)</span>
+            <input className="input input-bordered" type="number" name="estimatedHours" defaultValue={task?.estimatedHours ?? ''} min="0" step="any" />
+          </label>
+          <label className="form-control gap-1">
+            <span>Actual hours (optional)</span>
+            <input className="input input-bordered" type="number" name="actualHours" defaultValue={task?.actualHours ?? ''} min="0" step="any" />
           </label>
         </div>
         {validationError && <p className="alert alert-error" role="alert">{validationError}</p>}
@@ -152,6 +167,8 @@ export default function ProjectTasks({ projectId, canManage, readOnly }: {
       ...(input.description !== task.description && { description: input.description }),
       ...(input.status !== task.status && { status: input.status }),
       ...(input.dueDate !== task.dueDate && { dueDate: input.dueDate }),
+      ...(input.estimatedHours !== task.estimatedHours && { estimatedHours: input.estimatedHours }),
+      ...(input.actualHours !== task.actualHours && { actualHours: input.actualHours }),
     };
     if (Object.keys(changes).length) {
       void change(() => updateTask({ variables: { id: task.id, input: changes } }), 'Could not update the task. Try again.');

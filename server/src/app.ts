@@ -45,6 +45,7 @@ export function createApplication(config: ReturnType<typeof readConfig>, deliver
       prisma.user.findFirst({ select: { id: true } }),
       prisma.session.findFirst({ select: { id: true } }),
       prisma.project.findFirst({ select: { archivedAt: true } }),
+      prisma.projectExpense.findFirst({ select: { id: true } }),
       prisma.account.findFirst({ select: { id: true } }),
       prisma.verification.findFirst({ select: { id: true } }),
       prisma.rateLimit.findFirst({ select: { id: true } }),

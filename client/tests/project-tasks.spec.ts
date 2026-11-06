@@ -12,6 +12,8 @@ type TaskFixture = {
   description: string | null;
   status: string;
   dueDate: string | null;
+  estimatedHours: number | null;
+  actualHours: number | null;
   completedDate: string | null;
   assignee: null;
 };
@@ -19,6 +21,7 @@ type TaskFixture = {
 const savedTask: TaskFixture = {
   __typename: 'Task', id: 'check-joists', name: 'Check the joists', description: 'Probe for rot.',
   status: 'TODO', dueDate: '2026-11-06T20:45:37.123Z', completedDate: null, assignee: null,
+  estimatedHours: 3.5, actualHours: null,
 };
 const completedDate = '2026-11-06T22:00:00.000Z';
 
@@ -92,6 +95,8 @@ test('an owner can create a project task and reopen it after reload', async ({ p
   await tasks.getByRole('button', { name: 'Add task' }).click();
   await tasks.getByLabel('Task name').fill('  Inspect the footers  ');
   await tasks.getByLabel('Description (optional)').fill('  Check the post bases.  ');
+  await tasks.getByLabel('Estimated hours (optional)').fill('1.25');
+  await tasks.getByLabel('Actual hours (optional)').fill('0');
   await tasks.getByRole('button', { name: 'Create task' }).click();
   await expect(tasks.getByRole('heading', { name: 'Inspect the footers' })).toBeVisible();
   await expect(tasks.getByText('Check the post bases.')).toBeVisible();
@@ -100,6 +105,13 @@ test('an owner can create a project task and reopen it after reload', async ({ p
   await page.reload();
   await page.getByRole('button', { name: 'Show tasks' }).click();
   await expect(tasks.getByRole('heading', { name: 'Inspect the footers' })).toBeVisible();
+  await tasks.getByRole('button', { name: 'Edit Inspect the footers' }).click();
+  await expect(tasks.getByLabel('Estimated hours (optional)')).toHaveValue('1.25');
+  await expect(tasks.getByLabel('Actual hours (optional)')).toHaveValue('0');
+  await tasks.getByRole('button', { name: 'Save task' }).click();
+  await expect(tasks.getByLabel('Task name')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Hide tasks' }).click();
+  await expect(tasks).toHaveCount(0);
 });
 
 test('an owner can edit, complete, and delete a task while preserving its untouched deadline', async ({ page }) => {
@@ -111,6 +123,7 @@ test('an owner can edit, complete, and delete a task while preserving its untouc
   await expect(tasks.getByLabel('Due date and time (local, optional)')).toHaveValue('2026-11-06T15:45');
   await tasks.getByLabel('Task name').fill('Check and clean the joists');
   await tasks.getByLabel('Description (optional)').fill('');
+  await tasks.getByLabel('Estimated hours (optional)').fill('');
   await tasks.getByLabel('Task status').selectOption('COMPLETED');
   await tasks.getByRole('button', { name: 'Save task' }).click();
   await expect(tasks.getByRole('heading', { name: 'Check and clean the joists' })).toBeVisible();

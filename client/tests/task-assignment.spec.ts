@@ -11,7 +11,7 @@ async function mockProject(page: Page, { asMember = false, archived = false, rej
   const memberDisplay = { id: member.id, name: member.name };
   const task = {
     __typename: 'Task', id: 'check-joists', name: taskName, status: 'TODO',
-    description: null, dueDate: null, completedDate: null,
+    description: null, dueDate: null, completedDate: null, estimatedHours: null, actualHours: null,
     assignee: asMember ? memberDisplay : null,
   };
   await page.route('**/api/auth/get-session', route =>
@@ -78,6 +78,9 @@ test('a project owner can retry assignment to an existing member and later unass
   await page.reload();
   await page.getByRole('button', { name: 'Show tasks' }).click();
   await expect(tasks.getByText('Assigned to Casey')).toBeVisible();
+  await assign.click();
+  await save.click();
+  await expect(assignee).toHaveCount(0);
   await assign.click();
   await assignee.selectOption('');
   await save.click();

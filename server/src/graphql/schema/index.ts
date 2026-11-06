@@ -1,5 +1,6 @@
 import { taskMutationFields, taskQueryFields, taskTypeFields } from './tasks';
 import { inventoryMutationFields, inventoryQueryFields, inventoryTypeFields } from './inventory';
+import { reportingMutationFields, reportingQueryFields, reportingTypeFields } from './reporting';
 import { scheduleQueryFields, scheduleTypeFields } from './schedule';
 
 // The API exposes supported operations. Remaining Prisma models are reserved for later slices.
@@ -41,6 +42,7 @@ export const typeDefs = `
 
   ${taskTypeFields}
   ${inventoryTypeFields}
+  ${reportingTypeFields}
   ${scheduleTypeFields}
   type DashboardData {
     totalProjects: Int!
@@ -94,6 +96,7 @@ export const typeDefs = `
     showcaseProject(slug: String!): ShowcaseProject
     ${taskQueryFields}
     ${inventoryQueryFields}
+    ${reportingQueryFields}
     ${scheduleQueryFields}
     dashboardData: DashboardData!
   }
@@ -105,6 +108,7 @@ export const typeDefs = `
     deleteProject(id: ID!): Boolean!
     ${taskMutationFields}
     ${inventoryMutationFields}
+    ${reportingMutationFields}
     inviteToProject(projectId: ID!, email: String!): ProjectInvitation!
     acceptProjectInvite(token: String!): Project!
     revokeProjectInvite(projectId: ID!, id: ID!): Boolean!

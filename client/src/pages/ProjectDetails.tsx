@@ -286,6 +286,7 @@ export default function ProjectDetails() {
                 </>
               )}
               {project.canManage && <ProjectArchiveControl key={project.id} project={project} />}
+              {project.canManage && <Link className="link self-start" to={`/projects/${project.id}/report`}>Project report</Link>}
             </div>
           </article>
           <div className="space-y-3">

@@ -38,7 +38,7 @@ async function openProject(page: Page, canManage: boolean, startArchived = false
           projectMembers: [{ user: member }],
         } } });
       case 'GetProjectTasks':
-        return route.fulfill({ json: { data: { tasks: [] } } });
+        return route.fulfill({ json: { data: { tasks: [], projectMembers: [] } } });
       case 'ArchiveProject':
       case 'RestoreProject': {
         expect(variables.id).toBe(project.id);
@@ -86,6 +86,12 @@ test('an owner can archive and restore without losing existing sharing controls'
   await card.getByRole('link', { name: project.name }).click();
   await checkpointCoverage(page);
   await page.reload();
+  await page.getByRole('button', { name: 'Show tasks' }).click();
+  await expect(page.getByText('Tasks are read-only while this project is archived.')).toBeVisible();
+  await page.getByRole('button', { name: 'Hide tasks' }).click();
+  rejectNext();
+  await page.getByRole('button', { name: 'Restore project' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Could not restore the project. Try again.');
   await page.getByRole('button', { name: 'Restore project' }).click();
   await expect(page.getByRole('button', { name: 'Edit details' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Post comment' })).toBeVisible();

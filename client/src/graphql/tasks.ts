@@ -16,6 +16,8 @@ export type TaskInput = {
   description: string | null;
   status: TaskStatus;
   dueDate: string | null;
+  estimatedHours: number | null;
+  actualHours: number | null;
 };
 
 export interface Task extends TaskInput {
@@ -33,6 +35,8 @@ const TASK_FIELDS = gql`
     description
     status
     dueDate
+    estimatedHours
+    actualHours
     completedDate
     assignee { id name }
   }

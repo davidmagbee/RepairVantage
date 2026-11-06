@@ -44,6 +44,10 @@ To permanently delete an active project, select **Delete project permanently** a
 
 On Project Details, select **Show tasks**. Owners see all project tasks and can add, edit, delete, and assign them to existing project members. Choose **Unassigned** to clear an assignment. Members see only tasks assigned to them and can edit those tasks on active projects. To change status, drag a task to a column or open **Edit** and select a status with the keyboard or touch. The task deadline field uses your browser’s local time. The board is read-only while the project is archived.
 
+## Project reports
+
+Enter estimated and actual time in decimal hours on a task. Owners can open the project report to see both time totals and record actual expenses in USD. Use **Download CSV** for spreadsheet data or **Print / Save as PDF**, then select your browser’s **Save as PDF** destination. Archived project reports remain readable.
+
 ## Inventory
 
 Open **Inventory** in workspace navigation to add or edit parts and tools and their on-hand counts. Select **Show requirements** on an owned project to set or remove an item quantity. Required quantities replace the previous value. The inventory forecast sums planned, in-progress, and on-hold projects that are active. Archived requirements remain readable.

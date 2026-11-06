@@ -23,7 +23,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-base-200 text-base-content">
-      <header className="border-b border-base-300 bg-base-100">
+      <header className="border-b border-base-300 bg-base-100 print:hidden">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <nav aria-label="Workspace" className="flex flex-wrap items-center gap-4">
             <Link to="/" className="text-lg font-bold">RepairVantage</Link>

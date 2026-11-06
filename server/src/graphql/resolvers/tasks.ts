@@ -7,7 +7,13 @@ import {
 } from '../policy';
 import type { Context } from '../policy';
 
-type TaskFields = { description?: string | null; status?: TaskStatus | null; dueDate?: Date | null };
+type TaskFields = {
+  description?: string | null;
+  status?: TaskStatus | null;
+  dueDate?: Date | null;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
+};
 type TaskInput = TaskFields & { projectId: string; name: string };
 type TaskUpdateInput = TaskFields & { name?: string | null };
 type TaskFilters = { projectId?: string | null; status?: TaskStatus | null };
@@ -15,10 +21,14 @@ type TaskWriteTarget = Prisma.TaskWhereUniqueInput & { projectId: string };
 
 const taskOrder = [{ createdAt: 'asc' }, { id: 'asc' }] satisfies Prisma.TaskOrderByWithRelationInput[];
 
-function validatedFields({ description, status, dueDate }: TaskFields) {
+function validatedFields({ description, status, dueDate, estimatedHours, actualHours }: TaskFields) {
   if (description && description.length > 2000) badInput('Description must be at most 2,000 characters');
   if (status === null) badInput('Status cannot be null');
-  return { description, status, dueDate };
+  // Omission preserves the existing value and explicit null clears it.
+  for (const hours of [estimatedHours, actualHours]) {
+    if (hours != null && (!Number.isFinite(hours) || hours < 0)) badInput('Task hours must be finite and nonnegative');
+  }
+  return { description, status, dueDate, estimatedHours, actualHours };
 }
 
 function completionDate(next: TaskStatus | undefined, previous?: TaskStatus) {
