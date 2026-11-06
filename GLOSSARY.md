@@ -24,6 +24,8 @@ RepairVantage tracks repair work, the items required to complete it, and when it
 
 **Tool** — A piece of equipment that can be assigned to a project or task with a quantity.
 
+**Stock shortfall** — Required units from the owner's unfinished, unarchived projects minus on-hand stock, floored at zero.
+
 **Assignment** — A link between a part or tool and a project or task, with its own quantity. Use “task assignee” for the user assigned to a task.
 
 **Dependency** — A record with fields for a dependent task and its prerequisite task, or for part and tool requirements.

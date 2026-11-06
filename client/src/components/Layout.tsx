@@ -25,9 +25,10 @@ export default function Layout() {
     <div className="min-h-screen bg-base-200 text-base-content">
       <header className="border-b border-base-300 bg-base-100">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <nav aria-label="Workspace" className="flex items-center gap-4">
+          <nav aria-label="Workspace" className="flex flex-wrap items-center gap-4">
             <Link to="/" className="text-lg font-bold">RepairVantage</Link>
             <Link to="/projects" className="link link-hover">Projects</Link>
+            <Link to="/projects/inventory" className="link link-hover">Inventory</Link>
           </nav>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm sm:inline">{user?.name || user?.email}</span>

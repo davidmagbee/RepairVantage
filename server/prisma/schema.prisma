@@ -24,6 +24,8 @@ model User {
   updatedAt      DateTime  @updatedAt
   projects       Project[]
   tasks          Task[]
+  parts          Part[]
+  tools          Tool[]
   memberships    ProjectMember[]
   projectComments ProjectComment[]
   sessions       Session[]
@@ -110,6 +112,9 @@ enum TaskStatus {
 model Part {
   id          String       @id @default(uuid())
   name        String
+  onHand      Int          @default(0)
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   description String?
   price       Float?
   url         String?
@@ -121,6 +126,8 @@ model Part {
   tasks       PartTask[]
   dependencies Dependency[] @relation("RequiredParts")
   requiredFor  Dependency[] @relation("DependentParts")
+
+  @@index([userId])
 }
 
 model PartProject {
@@ -148,6 +155,9 @@ model PartTask {
 model Tool {
   id          String      @id @default(uuid())
   name        String
+  onHand      Int         @default(0)
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   description String?
   price       Float?
   url         String?
@@ -158,6 +168,8 @@ model Tool {
   projects    ToolProject[]
   tasks       ToolTask[]
   dependencies Dependency[] @relation("RequiredTools")
+
+  @@index([userId])
 }
 
 model ToolProject {

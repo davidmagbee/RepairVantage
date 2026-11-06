@@ -50,6 +50,7 @@ Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefi
 - Project owners can create, update, delete, invite, remove members, and publish or unpublish Showcase links. Owners can list, create, edit, and permanently delete tasks. Task deletion cascades to related assignments, dependency edges, and calendar entries.
 - Owners can archive and restore projects. Archived project content is read-only. Existing invitation acceptance, revocation, member removal, and unpublishing remain available.
 - Invitations bind a single-use link to the recipient's verified email. Links expire after seven days. Reissuing an invite revokes the previous link. Removing a member also revokes pending links for their email.
-- Members can read shared project fields and post private comments. Owner notes, budgets, tasks, invitation details, and the membership list remain private to the owner.
+- Members can read shared project fields and post private comments. Owner notes, budgets, invitation details, and the membership list remain private to the owner.
 - A current verified member can read and edit an assigned task on an active project. Owners control assignment and deletion. Membership removal clears assignments.
 - A Showcase URL exposes its explicit title, summary, publication time, and current project status to anyone with the link. Showcase links are unlisted. Unpublishing revokes the link, and republishing creates a new one.
+- Catalog items and project inventory requirements are owner-only. Archived projects retain readable requirements. Planned, in-progress, and on-hold projects contribute to shortfalls while unarchived.

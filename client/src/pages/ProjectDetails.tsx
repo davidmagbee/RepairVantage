@@ -4,6 +4,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProjectSharing from '../components/ProjectSharing';
 import ProjectTasks from '../components/ProjectTasks';
+import ProjectRequirements from '../components/ProjectRequirements';
 import { privateOperation } from '../graphql/client';
 import { ADD_PROJECT_COMMENT, ARCHIVE_PROJECT, DELETE_PROJECT, RESTORE_PROJECT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
@@ -237,6 +238,7 @@ function ProjectComments({ project }: { project: ProjectWithComments }) {
 export default function ProjectDetails() {
   const { id } = useParams();
   const [taskProjectId, setTaskProjectId] = useState<string>();
+  const [requirementProjectId, setRequirementProjectId] = useState<string>();
   const { data, loading, error, refetch } = useQuery<{ project: ProjectWithComments | null }>(GET_PROJECT_DETAILS, {
     context: privateOperation,
     variables: { id },
@@ -244,6 +246,7 @@ export default function ProjectDetails() {
   });
   const project = data?.project;
   const tasksExpanded = Boolean(project && taskProjectId === project.id);
+  const requirementsExpanded = Boolean(project && requirementProjectId === project.id);
 
   return (
     <div className="space-y-4">
@@ -300,6 +303,18 @@ export default function ProjectDetails() {
                 {tasksExpanded && <ProjectTasks key={project.id} projectId={project.id} readOnly={Boolean(project.archivedAt)} canManage={project.canManage} />}
               </div>
           </div>
+          {project.canManage && (
+            <div className="space-y-3">
+              <button className="btn btn-outline" type="button" aria-expanded={requirementsExpanded}
+                aria-controls="project-requirements" onClick={() => setRequirementProjectId(requirementsExpanded ? undefined : project.id)}>
+                {requirementsExpanded ? 'Hide requirements' : 'Show requirements'}
+              </button>
+              {/* The owner catalog stays private and loads only when requested. */}
+              <div id="project-requirements">
+                {requirementsExpanded && <ProjectRequirements key={project.id} projectId={project.id} readOnly={Boolean(project.archivedAt)} />}
+              </div>
+            </div>
+          )}
           <ProjectComments key={project.id} project={project} />
           {project.canManage && <ProjectSharing key={`sharing-${project.id}`} projectId={project.id} archived={Boolean(project.archivedAt)} />}
           {project.canManage && !project.archivedAt && <ProjectDeleteControl key={`delete-${project.id}`} project={project} />}

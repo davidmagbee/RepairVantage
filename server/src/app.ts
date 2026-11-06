@@ -53,6 +53,8 @@ export function createApplication(config: ReturnType<typeof readConfig>, deliver
       prisma.projectInvite.findFirst({ select: { id: true } }),
       prisma.projectShowcase.findFirst({ select: { slug: true } }),
       prisma.projectComment.findFirst({ select: { id: true } }),
+      prisma.part.findFirst({ select: { userId: true, onHand: true } }),
+      prisma.tool.findFirst({ select: { userId: true, onHand: true } }),
     ]);
   }
 

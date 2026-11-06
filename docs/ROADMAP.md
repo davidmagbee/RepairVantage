@@ -22,9 +22,9 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. The 
 | --- | --- | --- |
 | 1. Project lifecycle · In development | Core editing and sharing are live. Archive, restore, and confirmed permanent deletion are on the development branch. | Verify archived writes are denied, restore reopens edits, and deletion requires explicit confirmation. |
 | 2. Tasks · In development | Owner CRUD, member assignment, and the status board are on the development branch. Drag cards or use the keyboard edit path. | Verify assignees can edit only their own tasks, membership removal ends access, and archived tasks reject writes. |
-| 3. Parts and tools · Planned | Add owner-scoped catalogs and project or task assignments. | Define ownership and quantity semantics. Prevent cross-owner links and conflicting allocations. |
-| 4. Dependencies and scheduling · Planned | Add prerequisite rules, then calendar and Gantt views over project and task dates. | Reject invalid edges and cycles. Agree on time zones, all-day events, and which dates drive the timeline. |
-| 5. Reporting and export · Planned | Add search, cost and time summaries, CSV, then PDF. | Reconcile totals and export rows with the same authorized filtered view. Define cost, currency, rounding, and time inputs first. |
+| 3. Parts and tools · In development | Owner-scoped parts and tools, project requirements, and stock shortfalls are on the development branch. | Verify isolated catalogs, quantity replacement, and demand changes when projects archive or finish. |
+| 4. Dependencies and scheduling · Planned | Calendar and Gantt views show dated work, task assignees, and required tools. Add dependency rules as a separate slice. | Verify ranges and access. Reject invalid edges and cycles when dependencies ship. |
+| 5. Reporting and export · Planned | Track actual USD costs and time, then export the authorized report as CSV and PDF. | Reconcile totals and export rows with the same authorized project view. |
 
 **Every slice** · Test and refine the workflow, update its documentation, and record release evidence. Work toward 100% line coverage across executable application code and report branch coverage alongside it. [Engineering runbook](ENGINEERING.md) · [Current CI](../.github/workflows/verify.yml)
 

@@ -44,18 +44,18 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 
 ## Parts and tools
 
-1. Decide catalog ownership, quantity units, and whether the system tracks stock or only required items. Add owner-scoped part and tool lists and edits after that decision. [Current models](../server/prisma/schema.prisma)
-2. Assign one part or tool to a project or task with an explicit quantity. Reject cross-owner references and invalid quantities. Define whether repeats replace or increment. Test concurrent requests against PostgreSQL.
-3. Add reservation, stock movement, or forecasting only after the inventory meaning is approved and persisted data can support it.
+1. Owners create and edit private part and tool catalogs. Stock is a whole-number on-hand count. Legacy unowned rows and their links remain stored for explicit migration. [Inventory API](../server/src/graphql/schema/inventory.ts)
+2. Set or remove project requirements. Setting a quantity replaces the previous count. Requirements leave stock unchanged. Archive freezes changes and retains readable requirements. [Inventory tests](../server/test/inventory.test.cjs)
+3. Forecast shortfalls from planned, in-progress, and on-hold projects with no archive timestamp. Subtract on-hand stock and floor the result at zero. Task-level requirements and reservations are separate future slices.
 
 ## Dependencies and scheduling
 
 1. Define which task, part, and tool prerequisite edges are valid and when a prerequisite blocks work. Implement one edge type first. Reject self-links, forbidden cross-project links, and cycles, including conflicting concurrent writes. [Current dependency and event models](../server/prisma/schema.prisma)
-2. Decide time zone, all-day boundaries, and whether events derive from task dates or are authored independently. Add one authorized calendar view. Test date-range edges, daylight-saving transitions, and ownership.
+2. The first authorized schedule shows dated work alongside task assignees and required tools. Verify date-range edges and ownership before adding independently authored events.
 3. Add the Gantt view after date and dependency semantics settle. Verify display and editing against the same stored dates and prerequisites.
 
 ## Reporting, export, and documentation
 
-1. Agree on cost inputs, currency and rounding, and estimated versus actual time. Start with an owner-scoped summary reconciled to a known PostgreSQL fixture. Add search and filters with stable ordering and explicit access rules.
+1. Record actual expenses in USD and distinguish actual task time from estimates. Start with an owner-scoped summary reconciled to a known PostgreSQL fixture. Add search and filters with stable ordering and explicit access rules.
 2. Export the filtered report as CSV. Cover column order, quoting, Unicode, formula-like user text, and the same authorization as the source report. Add PDF after the report fields and format settle.
 3. With each slice, update setup instructions, API contracts, usage steps, and the release evidence needed to demonstrate it. Document migration and rollback implications when schema changes ship. [Setup](../README.md) · [API runbook](../server/README.md) · [Deployment](DEPLOYMENT.md)
