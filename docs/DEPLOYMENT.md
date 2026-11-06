@@ -4,7 +4,7 @@
 
 Vercel project `davidmagbees-projects/repairvantage` serves the Vite assets and the Express application at the same HTTPS origin. PostgreSQL runs in the dedicated `repairvantage` Neon project. Use the pooled connection as the Vercel runtime `DATABASE_URL` with the restricted application role. Use the direct owner connection only for migrations from a trusted release runner. Keep previews isolated from production data.
 
-Both database URLs use the `public` schema. For the hosted runtime, use TLS with hostname verification (`sslmode=verify-full`). The Node PostgreSQL driver uses channel binding over TLS when the server offers it. Its `enableChannelBinding` option is opportunistic, even if the URL includes `channel_binding=require`. Confirm the hosted binding policy before promoting the Prisma 7 build. [Prisma PostgreSQL adapter](https://www.prisma.io/docs/orm/v7/core-concepts/supported-databases/postgresql) · [node-postgres TLS](https://node-postgres.com/features/ssl) · [Strict binding support](https://github.com/brianc/node-postgres/pull/3746)
+Both database URLs use the `public` schema. The production runtime enforces TLS certificate and hostname verification (`sslmode=verify-full`). RepairVantage uses channel binding when the server offers it, per the approved hosting policy. [Prisma PostgreSQL adapter](https://www.prisma.io/docs/orm/v7/core-concepts/supported-databases/postgresql) · [node-postgres TLS](https://node-postgres.com/features/ssl)
 
 ## Configure sign-in
 

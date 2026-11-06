@@ -8,13 +8,16 @@ const { testDatabaseUrl } = require('./database-url.cjs');
 
 test('production serves public requests but disables sign-in until a provider is configured', async () => {
   const origin = 'https://repairvantage.example';
-  const application = createApplication(readConfig({
+  const databaseUrl = testDatabaseUrl().toString();
+  const config = readConfig({
     NODE_ENV: 'production',
     APP_ORIGIN: origin,
-    DATABASE_URL: testDatabaseUrl().toString(),
+    DATABASE_URL: databaseUrl,
     BETTER_AUTH_SECRET: randomBytes(32).toString('base64url'),
     AUTH_EMAIL_FROM: 'sender@example.test',
-  }));
+  });
+  // This test exercises production HTTP behavior using the disposable loopback database.
+  const application = createApplication({ ...config, databaseUrl });
   const listener = application.app.listen(0, '127.0.0.1');
   await once(listener, 'listening');
   const baseURL = `http://127.0.0.1:${listener.address().port}`;

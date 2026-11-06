@@ -39,6 +39,7 @@ test('configuration keeps defaults and trims explicitly configured providers', (
 
   const production = readConfig({
     ...configInput,
+    DATABASE_URL: `${configInput.DATABASE_URL}?sslmode=require&schema=public`,
     NODE_ENV: 'production',
     APP_ORIGIN: 'https://repairvantage.example',
     PORT: '8080',
@@ -50,6 +51,7 @@ test('configuration keeps defaults and trims explicitly configured providers', (
     AUTH_EMAIL_FROM: ' sender@example.test ',
   });
   assert.equal(production.production, true);
+  assert.equal(production.databaseUrl, `${configInput.DATABASE_URL}?sslmode=verify-full&schema=public`);
   assert.equal(production.origin, 'https://repairvantage.example');
   assert.equal(production.port, 8080);
   assert.equal(production.proxyHops, 1);
@@ -85,6 +87,9 @@ test('configuration rejects invalid database, origin, limits, and auth settings'
   for (const value of [undefined, 'http://repairvantage.example']) {
     assert.throws(() => readConfig({ ...configInput, NODE_ENV: 'production', APP_ORIGIN: value }), /APP_ORIGIN/);
   }
+  assert.throws(() => readConfig({
+    ...configInput, NODE_ENV: 'production', NODE_TLS_REJECT_UNAUTHORIZED: '0',
+  }), /TLS certificate verification/);
 });
 
 test('HTTP rejects unsupported methods, untrusted origins, and invalid JSON', async t => {

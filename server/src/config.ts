@@ -2,7 +2,16 @@ import { publicDatabaseUrl } from './db-url';
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   const production = env.NODE_ENV === 'production';
-  const databaseUrl = publicDatabaseUrl(env.DATABASE_URL ?? '', 'DATABASE_URL');
+  let databaseUrl = publicDatabaseUrl(env.DATABASE_URL ?? '', 'DATABASE_URL');
+  if (production) {
+    if (env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
+      throw new Error('Production requires Node TLS certificate verification');
+    }
+    // Require certificate and hostname verification even if the stored URL uses an older sslmode.
+    const url = new URL(databaseUrl);
+    url.searchParams.set('sslmode', 'verify-full');
+    databaseUrl = url.href;
+  }
 
   const origin = env.APP_ORIGIN ?? (production ? '' : 'http://localhost:5173');
   let appOrigin: URL;
