@@ -162,6 +162,32 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
     assert.equal((await data(projectQuery, { id }, owner)).project.comments[0].body, 'Member update');
   });
 
+  await t.test('owners can edit and clear project details while members can only read them', async () => {
+    const update = `mutation ($id: ID!, $input: ProjectUpdateInput!) {
+      updateProject(id: $id, input: $input) { name description status }
+    }`;
+    const input = { name: '  Updated repair  ', description: 'The revised project scope.' };
+    await rejects(update, { id, input }, null, 'UNAUTHENTICATED');
+    await rejects(update, { id, input }, member, 'NOT_FOUND');
+    await rejects(update, { id, input }, stranger, 'NOT_FOUND');
+    const result = await data(update, { id, input }, owner);
+    assert.equal(result.updateProject.name, 'Updated repair');
+    assert.equal(result.updateProject.description, input.description);
+    assert.equal(result.updateProject.status, 'PLANNED');
+    assert.equal((await data(projectQuery, { id }, member)).project.description, input.description);
+
+    for (const invalid of [
+      { name: ' ' }, { name: null }, { description: 'x'.repeat(2001) }, { notes: 'x'.repeat(5001) },
+      { budget: -1 }, { status: null }, { priority: null },
+    ]) {
+      await rejects(update, { id, input: invalid }, owner, 'BAD_USER_INPUT');
+    }
+    await data(update, { id, input: { description: null } }, owner);
+    const reopened = (await data(projectQuery, { id }, owner)).project;
+    assert.equal(reopened.name, 'Updated repair');
+    assert.equal(reopened.description, null);
+  });
+
   await t.test('unlisted Showcase reflects status and stays separate from private data', async () => {
     const { publishProject: publicProject } = await data(publish, { id }, owner);
     assert.match(publicProject.slug, /^[\w-]{32}$/);

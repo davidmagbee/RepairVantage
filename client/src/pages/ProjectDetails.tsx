@@ -4,7 +4,7 @@ import type { FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProjectSharing from '../components/ProjectSharing';
 import { privateOperation } from '../graphql/client';
-import { ADD_PROJECT_COMMENT, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
+import { ADD_PROJECT_COMMENT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
 import type { Project, ProjectWithComments } from '../graphql/queries';
 
@@ -12,6 +12,77 @@ const projectStatuses = ['PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANC
 
 function displayLabel(value: string) {
   return value.toLowerCase().replace(/_/g, ' ');
+}
+
+function ProjectDetailsEditor({ project }: { project: Project }) {
+  const [editing, setEditing] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const [updateDetails, { loading, error, reset }] = useMutation(UPDATE_PROJECT_DETAILS, {
+    context: privateOperation,
+    onCompleted: () => setEditing(false),
+    onError: () => {},
+  });
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setValidationError('');
+    reset();
+
+    const form = new FormData(event.currentTarget);
+    const enteredName = String(form.get('name'));
+    const name = enteredName.trim();
+    if (!name) {
+      setValidationError('Enter a project name.');
+      return;
+    }
+
+    const description = String(form.get('description'));
+    const savedDescription = (project.description ?? '').replace(/\r\n?/g, '\n');
+    // Omit untouched fields. An explicitly emptied description is stored as null.
+    const input = {
+      ...(enteredName !== project.name && name !== project.name && { name }),
+      ...(description !== savedDescription && { description: description.trim() || null }),
+    };
+    if (!Object.keys(input).length) {
+      setEditing(false);
+      return;
+    }
+    void updateDetails({ variables: { id: project.id, input } });
+  }
+
+  const message = validationError || (error && 'Could not update project details. Try again.');
+
+  if (!editing) {
+    return (
+      <button className="btn btn-outline btn-sm self-start" type="button" onClick={() => {
+        setValidationError('');
+        reset();
+        setEditing(true);
+      }}>
+        Edit details
+      </button>
+    );
+  }
+
+  return (
+    <form aria-label="Edit project details" className="space-y-3" onSubmit={submit}>
+      <label className="form-control gap-1">
+        <span>Project name</span>
+        <input className="input input-bordered" name="name" defaultValue={project.name} maxLength={120} disabled={loading} required />
+      </label>
+      <label className="form-control gap-1">
+        <span>Description (optional)</span>
+        <textarea className="textarea textarea-bordered" name="description" defaultValue={project.description ?? ''} rows={5} maxLength={2000} disabled={loading} />
+      </label>
+      {message && <p className="alert alert-error" role="alert">{message}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button className="btn btn-primary" type="submit" disabled={loading}>
+          {loading ? 'Saving…' : 'Save details'}
+        </button>
+        <button className="btn btn-ghost" type="button" onClick={() => setEditing(false)} disabled={loading}>Cancel</button>
+      </div>
+    </form>
+  );
 }
 
 function StatusControl({ project }: { project: Project }) {
@@ -139,7 +210,12 @@ export default function ProjectDetails() {
                 </div>
               </dl>
               {project.description && <p className="whitespace-pre-wrap break-words">{project.description}</p>}
-              {project.canManage && <StatusControl project={project} />}
+              {project.canManage && (
+                <>
+                  <ProjectDetailsEditor key={project.id} project={project} />
+                  <StatusControl project={project} />
+                </>
+              )}
             </div>
           </article>
           <ProjectComments key={project.id} project={project} />
