@@ -13,8 +13,8 @@ const project = {
 };
 const session = { id: 'test-session', userId: owner.id, expiresAt: '2099-01-01T00:00:00.000Z' };
 
-async function mockAuth(page: Page) {
-  let signedIn = false;
+async function mockAuth(page: Page, initiallySignedIn = false) {
+  let signedIn = initiallySignedIn;
   await page.route('**/api/auth/providers', (route) => route.fulfill({ json: { google: false, emailOtp: true } }));
   await page.route('**/api/auth/get-session', (route) =>
     route.fulfill({ json: signedIn ? { user: owner, session } : null }),
@@ -33,6 +33,48 @@ async function mockAuth(page: Page) {
     return route.fulfill({ json: { success: true } });
   });
 }
+
+test('the landing page keeps workspace actions available to a signed-in user', async ({ page }) => {
+  await mockAuth(page, true);
+  await page.route('**/graphql', (route) =>
+    route.fulfill({ json: { data: { projects: [], sharedProjects: [] } } }),
+  );
+  await page.goto('/projects');
+  await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'RepairVantage', exact: true }).click();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('link', { name: 'Projects', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Create account', exact: true })).toHaveCount(0);
+
+  await page.reload();
+  await expect(page.getByRole('link', { name: 'Projects', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Start a project', exact: true }).click();
+  await expect(page).toHaveURL('/projects/new');
+});
+
+test('the landing page waits for session lookup before showing guest actions', async ({ page }) => {
+  let resolveSession!: () => void;
+  const sessionLookup = new Promise<void>((resolve) => { resolveSession = resolve; });
+  await page.route('**/api/auth/get-session', async (route) => {
+    await sessionLookup;
+    await route.fulfill({ json: null });
+  });
+
+  try {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: /Keep repair projects organized/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Create account', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Start a project', exact: true })).toHaveCount(0);
+  } finally {
+    resolveSession();
+  }
+
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveAttribute('href', '/login');
+  await expect(page.getByRole('link', { name: 'Create account', exact: true })).toHaveAttribute('href', '/register');
+  await expect(page.getByRole('link', { name: 'Start a project', exact: true })).toHaveAttribute('href', '/register');
+});
 
 test('a signed-out visitor is directed to sign in before viewing projects', async ({ page }) => {
   await mockAuth(page);
