@@ -10,6 +10,11 @@ import type { readConfig } from './config.js';
 
 type IdentityConfig = ReturnType<typeof readConfig>;
 type CodeSender = (email: string, code: string) => Promise<void>;
+const sendCodePath = '/email-otp/send-verification-otp';
+
+function codeDeliveryError() {
+  return new APIError('SERVICE_UNAVAILABLE', { message: 'The sign-in email could not be sent.' });
+}
 
 /** Reserve delivery capacity before Better Auth can rotate a valid code. */
 async function reserveCodeSend(prisma: PrismaClient, email: string, config: IdentityConfig) {
@@ -51,13 +56,14 @@ function makeCodeSender(config: NonNullable<IdentityConfig['email']>): CodeSende
     } catch {
       // Do not log the message, recipient, or code.
     }
-    throw new APIError('SERVICE_UNAVAILABLE', { message: 'The sign-in email could not be sent.' });
+    throw codeDeliveryError();
   };
 }
 
 /** Better Auth verifies identities and owns durable sessions. GraphQL gets only a verified principal. */
 export function createIdentity(prisma: PrismaClient, config: IdentityConfig, deliver?: CodeSender) {
   const sendCode = deliver ?? (config.email && makeCodeSender(config.email));
+  const failedCodeDeliveries = new WeakSet<Request>();
   const auth = betterAuth({
     appName: 'RepairVantage',
     baseURL: config.origin,
@@ -94,13 +100,13 @@ export function createIdentity(prisma: PrismaClient, config: IdentityConfig, del
       enabled: true,
       storage: 'database',
       customRules: {
-        '/email-otp/send-verification-otp': { window: 60, max: 3 },
+        [sendCodePath]: { window: 60, max: 3 },
         '/sign-in/email-otp': { window: 60, max: 10 },
       },
     },
     hooks: {
       before: createAuthMiddleware(async context => {
-        if (context.path === '/email-otp/send-verification-otp') {
+        if (context.path === sendCodePath) {
           if (context.body?.type !== 'sign-in') {
             throw new APIError('BAD_REQUEST', { message: 'Only sign-in codes are available.' });
           }
@@ -120,13 +126,26 @@ export function createIdentity(prisma: PrismaClient, config: IdentityConfig, del
         }
         return undefined;
       }),
+      after: createAuthMiddleware(async context => {
+        if (context.path === sendCodePath && context.request && failedCodeDeliveries.delete(context.request)) {
+          throw codeDeliveryError();
+        }
+      }),
     },
     plugins: sendCode ? [emailOTP({
       expiresIn: 300,
       allowedAttempts: 3,
       // A short code is cheap to brute-force from an unkeyed database digest.
       storeOTP: { hash: async code => createHmac('sha256', config.authSecret).update(`otp:${code}`).digest('hex') },
-      async sendVerificationOTP({ email, otp }) { await sendCode(email, otp); },
+      async sendVerificationOTP({ email, otp }, context) {
+        try {
+          await sendCode(email, otp);
+        } catch (error) {
+          // Better Auth catches delivery errors inside its OTP endpoint. Report the outcome in the request's after hook.
+          if (!context?.request) throw error;
+          failedCodeDeliveries.add(context.request);
+        }
+      },
     })] : [],
   });
   return {
