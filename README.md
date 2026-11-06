@@ -12,7 +12,7 @@ Click anywhere on an owned or shared project card to open its details. Keyboard 
 
 ## Project status
 
-**Project lifecycle and tasks.** The owner workspace and sharing workflows are live. The development branch adds read-only archive and restore, confirmed permanent deletion, and an owner task board. The [roadmap](docs/ROADMAP.md) tracks release verification and later phases. The [implementation guide](docs/IMPLEMENTATION.md) translates the original [Cursor plan](.cursorrules) into acceptance criteria.
+**Project lifecycle and tasks.** The owner workspace and sharing workflows are live. The development branch adds read-only archive and restore, confirmed permanent deletion, and a task board with member assignment. The [roadmap](docs/ROADMAP.md) tracks release verification and later phases. The [implementation guide](docs/IMPLEMENTATION.md) translates the original [Cursor plan](.cursorrules) into acceptance criteria.
 
 The frontend is React and Vite. The same-origin backend is Express, Apollo GraphQL, Better Auth, Prisma 7, and PostgreSQL.
 

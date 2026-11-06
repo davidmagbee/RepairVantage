@@ -21,7 +21,7 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. The 
 | Phase | Scope | Exit |
 | --- | --- | --- |
 | 1. Project lifecycle · In development | Core editing and sharing are live. Archive, restore, and confirmed permanent deletion are on the development branch. | Verify archived writes are denied, restore reopens edits, and deletion requires explicit confirmation. |
-| 2. Tasks · In development | Owner CRUD, the status board, and the keyboard edit path are on the development branch. Assignment to project members comes next. | Verify owner changes persist, assignees can edit only their own tasks, and archived tasks reject writes. |
+| 2. Tasks · In development | Owner CRUD, member assignment, and the status board are on the development branch. Drag cards or use the keyboard edit path. | Verify assignees can edit only their own tasks, membership removal ends access, and archived tasks reject writes. |
 | 3. Parts and tools · Planned | Add owner-scoped catalogs and project or task assignments. | Define ownership and quantity semantics. Prevent cross-owner links and conflicting allocations. |
 | 4. Dependencies and scheduling · Planned | Add prerequisite rules, then calendar and Gantt views over project and task dates. | Reject invalid edges and cycles. Agree on time zones, all-day events, and which dates drive the timeline. |
 | 5. Reporting and export · Planned | Add search, cost and time summaries, CSV, then PDF. | Reconcile totals and export rows with the same authorized filtered view. Define cost, currency, rounding, and time inputs first. |

@@ -1,5 +1,6 @@
 export const taskTypeFields = `
   enum TaskStatus { TODO IN_PROGRESS REVIEW COMPLETED BLOCKED }
+  type TaskAssignee { id: ID!, name: String! }
 
   type Task {
     id: ID!
@@ -12,6 +13,7 @@ export const taskTypeFields = `
     createdAt: DateTime!
     updatedAt: DateTime!
     project: Project!
+    assignee: TaskAssignee
   }
 
   input TaskInput {
@@ -39,4 +41,6 @@ export const taskMutationFields = `
     createTask(input: TaskInput!): Task!
     updateTask(id: ID!, input: TaskUpdateInput!): Task!
     deleteTask(id: ID!): Boolean!
+    """Assign to a verified project member. Null or an omitted userId clears the assignment."""
+    setTaskAssignee(id: ID!, userId: ID): Task!
 `;

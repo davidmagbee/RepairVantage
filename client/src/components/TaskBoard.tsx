@@ -10,11 +10,13 @@ function allowTaskDrop(event: DragEvent<HTMLElement>) {
   event.dataTransfer.dropEffect = 'move';
 }
 
-export default function TaskBoard({ tasks, readOnly, busy, onEdit, onDelete, onMove }: {
+export default function TaskBoard({ tasks, canManage, readOnly, busy, onEdit, onAssign, onDelete, onMove }: {
   tasks: Task[];
+  canManage: boolean;
   readOnly: boolean;
   busy: boolean;
   onEdit: (task: Task) => void;
+  onAssign: (task: Task) => void;
   onDelete: (task: Task) => void;
   onMove: (task: Task, status: TaskStatus) => void;
 }) {
@@ -27,7 +29,7 @@ export default function TaskBoard({ tasks, readOnly, busy, onEdit, onDelete, onM
     if (task && task.status !== status) onMove(task, status);
   }
 
-  if (!tasks.length) return <p>No tasks yet.</p>;
+  if (!tasks.length) return <p>{canManage ? 'No tasks yet.' : 'No assigned tasks yet.'}</p>;
 
   return (
     <div className="space-y-3">
@@ -57,6 +59,7 @@ export default function TaskBoard({ tasks, readOnly, busy, onEdit, onDelete, onM
                   {task.description && <p className="whitespace-pre-wrap break-words">{task.description}</p>}
                   {task.dueDate && <p>Due <time dateTime={task.dueDate}>{new Date(task.dueDate).toLocaleString()}</time></p>}
                   {task.completedDate && <p>Completed <time dateTime={task.completedDate}>{new Date(task.completedDate).toLocaleString()}</time></p>}
+                  <p>{task.assignee ? `Assigned to ${task.assignee.name}` : 'Unassigned'}</p>
                   {!readOnly && (
                     <div className="flex flex-wrap gap-2">
                       <button
@@ -66,13 +69,24 @@ export default function TaskBoard({ tasks, readOnly, busy, onEdit, onDelete, onM
                         disabled={busy}
                         onClick={() => onEdit(task)}
                       >Edit</button>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        type="button"
-                        aria-label={`Delete ${task.name}`}
-                        disabled={busy}
-                        onClick={() => onDelete(task)}
-                      >Delete</button>
+                      {canManage && (
+                        <>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            type="button"
+                            aria-label={`Assign ${task.name}`}
+                            disabled={busy}
+                            onClick={() => onAssign(task)}
+                          >Assign</button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            type="button"
+                            aria-label={`Delete ${task.name}`}
+                            disabled={busy}
+                            onClick={() => onDelete(task)}
+                          >Delete</button>
+                        </>
+                      )}
                     </div>
                   )}
                 </li>

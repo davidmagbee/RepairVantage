@@ -18,6 +18,8 @@ RepairVantage tracks repair work, the items required to complete it, and when it
 
 **Task** — A unit of work within one project. A task can be assigned to a user and can have its own dates and part or tool assignments.
 
+**Task assignee** — A current project member chosen by the owner to read and edit one assigned task. Removing membership clears the assignment.
+
 **Part** — A repair item that can be assigned to a project or task with a quantity.
 
 **Tool** — A piece of equipment that can be assigned to a project or task with a quantity.

@@ -3,8 +3,8 @@ import { useState, type FormEvent } from 'react';
 import { privateOperation } from '../graphql/client';
 import TaskBoard from './TaskBoard';
 import {
-  CREATE_PROJECT_TASK, DELETE_PROJECT_TASK, GET_PROJECT_TASKS, UPDATE_PROJECT_TASK, taskStatusLabels, taskStatuses,
-  type Task, type TaskInput, type TaskStatus,
+  CREATE_PROJECT_TASK, DELETE_PROJECT_TASK, GET_PROJECT_TASKS, SET_PROJECT_TASK_ASSIGNEE, UPDATE_PROJECT_TASK,
+  taskStatusLabels, taskStatuses, type ProjectTaskMember, type Task, type TaskInput, type TaskStatus,
 } from '../graphql/tasks';
 
 function localDateTime(date: Date) {
@@ -12,7 +12,7 @@ function localDateTime(date: Date) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
-type TaskAction = { kind: 'create' } | { kind: 'edit' | 'delete'; task: Task };
+type TaskAction = { kind: 'create' } | { kind: 'edit' | 'assign' | 'delete'; task: Task };
 
 function TaskEditor({ task, pending, onSave, onCancel }: {
   task?: Task;
@@ -93,15 +93,21 @@ function TaskEditor({ task, pending, onSave, onCancel }: {
   );
 }
 
-export default function ProjectTasks({ projectId, readOnly }: { projectId: string; readOnly: boolean }) {
-  const { data, loading, error, refetch } = useQuery<{ tasks: Task[] }>(GET_PROJECT_TASKS, {
+export default function ProjectTasks({ projectId, canManage, readOnly }: {
+  projectId: string;
+  canManage: boolean;
+  readOnly: boolean;
+}) {
+  const { data, loading, error, refetch } = useQuery<{ tasks: Task[]; projectMembers?: ProjectTaskMember[] }>(GET_PROJECT_TASKS, {
     context: privateOperation,
-    variables: { projectId },
+    // The API scopes task reads. Request the member roster only for the owner assignment form.
+    variables: { projectId, canManage },
     fetchPolicy: 'network-only',
   });
   const [createTask] = useMutation(CREATE_PROJECT_TASK, { context: privateOperation });
   const [updateTask] = useMutation(UPDATE_PROJECT_TASK, { context: privateOperation });
   const [deleteTask] = useMutation(DELETE_PROJECT_TASK, { context: privateOperation });
+  const [setTaskAssignee] = useMutation(SET_PROJECT_TASK_ASSIGNEE, { context: privateOperation });
   const [action, setAction] = useState<TaskAction | null>(null);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState('');
@@ -154,6 +160,19 @@ export default function ProjectTasks({ projectId, readOnly }: { projectId: strin
     }
   }
 
+  function assign(event: FormEvent<HTMLFormElement>, task: Task) {
+    event.preventDefault();
+    const userId = String(new FormData(event.currentTarget).get('assignee') || '') || null;
+    if (userId === (task.assignee?.id ?? null)) {
+      closeAction();
+      return;
+    }
+    void change(
+      () => setTaskAssignee({ variables: { id: task.id, userId } }),
+      'Could not change the assignee. Check project membership and try again.',
+    );
+  }
+
   return (
     <section className="space-y-4 rounded-box bg-base-100 p-4 shadow sm:p-6" aria-labelledby="project-tasks-heading">
       <h2 className="text-xl font-bold" id="project-tasks-heading">Tasks</h2>
@@ -170,13 +189,31 @@ export default function ProjectTasks({ projectId, readOnly }: { projectId: strin
         <>
           {readOnly ? <p>Tasks are read-only while this project is archived.</p> : (
             <>
-              {!action && (
+              {canManage && !action && (
                 <button className="btn btn-primary" type="button" onClick={() => setAction({ kind: 'create' })} disabled={pending}>Add task</button>
               )}
-              {action && action.kind !== 'delete' && (
+              {(action?.kind === 'edit' || (canManage && action?.kind === 'create')) && (
                 <TaskEditor task={action.kind === 'edit' ? action.task : undefined} pending={pending} onSave={save} onCancel={closeAction} />
               )}
-              {action?.kind === 'delete' && (
+              {canManage && action?.kind === 'assign' && (
+                <form className="space-y-2 rounded-box border border-base-300 p-4" onSubmit={event => assign(event, action.task)}>
+                  <p>Assign <strong>{action.task.name}</strong> to an existing project member.</p>
+                  <label className="form-control gap-1">
+                    <span>Task assignee</span>
+                    <select className="select select-bordered" name="assignee" defaultValue={action.task.assignee?.id ?? ''} disabled={pending} autoFocus>
+                      <option value="">Unassigned</option>
+                      {data.projectMembers?.map(({ user }) => (
+                        <option key={user.id} value={user.id}>{user.name ? `${user.name} · ${user.email}` : user.email}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="flex gap-2">
+                    <button className="btn btn-ghost" type="button" disabled={pending} onClick={closeAction}>Cancel</button>
+                    <button className="btn btn-primary" type="submit" disabled={pending}>{pending ? 'Saving…' : 'Save assignee'}</button>
+                  </div>
+                </form>
+              )}
+              {canManage && action?.kind === 'delete' && (
                 <div className="space-y-2 rounded-box border border-base-300 p-4" role="group" aria-label="Confirm task deletion">
                   <p>Delete <strong>{action.task.name}</strong>? This is permanent.</p>
                   <div className="flex gap-2">
@@ -191,9 +228,11 @@ export default function ProjectTasks({ projectId, readOnly }: { projectId: strin
           )}
           <TaskBoard
             tasks={data.tasks}
+            canManage={canManage}
             readOnly={readOnly}
             busy={pending || Boolean(action)}
             onEdit={task => setAction({ kind: 'edit', task })}
+            onAssign={task => setAction({ kind: 'assign', task })}
             onDelete={task => setAction({ kind: 'delete', task })}
             onMove={(task, status) => {
               void change(() => updateTask({ variables: { id: task.id, input: { status } } }), 'Could not move the task. Try again.');

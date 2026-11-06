@@ -40,7 +40,7 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 
 1. Open **Show tasks** on Project Details to list, create, edit, or delete owner tasks. Archived tasks are readable. Confirm permanent deletion of a task and its related links. [Task board](../client/src/components/ProjectTasks.tsx) · [Task API](../server/src/graphql/schema/tasks.ts)
 2. Move between any of the five defined statuses by dragging a card or editing its status with the keyboard. Entering Completed records the time, repeated completion preserves it, and reopening clears it. Leaving description or due date blank clears that field. [Task tests](../server/test/tasks.test.cjs)
-3. Assignment policy is approved. Owners assign current project members. Assignees can read and edit their own tasks while their membership is active.
+3. Owners can assign or unassign current verified project members. Members see only tasks assigned to them and can edit those tasks while the project is active. Owners control creation, deletion, and reassignment. Membership removal clears assignments. New tasks and legacy tasks carrying their owner's ID display as unassigned. [Assignment tests](../server/test/task-assignment.test.cjs)
 
 ## Parts and tools
 

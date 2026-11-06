@@ -21,7 +21,10 @@ export type TaskInput = {
 export interface Task extends TaskInput {
   id: string;
   completedDate: string | null;
+  assignee: { id: string; name: string } | null;
 }
+
+export type ProjectTaskMember = { user: { id: string; name: string; email: string } };
 
 const TASK_FIELDS = gql`
   fragment TaskFields on Task {
@@ -31,12 +34,16 @@ const TASK_FIELDS = gql`
     status
     dueDate
     completedDate
+    assignee { id name }
   }
 `;
 
 export const GET_PROJECT_TASKS = gql`
-  query GetProjectTasks($projectId: ID!) {
+  query GetProjectTasks($projectId: ID!, $canManage: Boolean!) {
     tasks(projectId: $projectId) { ...TaskFields }
+    projectMembers(projectId: $projectId) @include(if: $canManage) {
+      user { id name email }
+    }
   }
   ${TASK_FIELDS}
 `;
@@ -58,5 +65,11 @@ export const UPDATE_PROJECT_TASK = gql`
 export const DELETE_PROJECT_TASK = gql`
   mutation DeleteProjectTask($id: ID!) {
     deleteTask(id: $id)
+  }
+`;
+
+export const SET_PROJECT_TASK_ASSIGNEE = gql`
+  mutation SetProjectTaskAssignee($id: ID!, $userId: ID) {
+    setTaskAssignee(id: $id, userId: $userId) { id assignee { id name } }
   }
 `;

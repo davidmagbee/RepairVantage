@@ -13,11 +13,12 @@ type TaskFixture = {
   status: string;
   dueDate: string | null;
   completedDate: string | null;
+  assignee: null;
 };
 
 const savedTask: TaskFixture = {
   __typename: 'Task', id: 'check-joists', name: 'Check the joists', description: 'Probe for rot.',
-  status: 'TODO', dueDate: '2026-11-06T20:45:37.123Z', completedDate: null,
+  status: 'TODO', dueDate: '2026-11-06T20:45:37.123Z', completedDate: null, assignee: null,
 };
 const completedDate = '2026-11-06T22:00:00.000Z';
 
@@ -48,14 +49,14 @@ async function mockTasks(page: Page, {
           rejectRead = false;
           return route.fulfill({ json: { errors: [{ message: 'Task read failed' }] } });
         }
-        return route.fulfill({ json: { data: { tasks } } });
+        return route.fulfill({ json: { data: { tasks, ...(canManage && { projectMembers: [] }) } } });
       case 'CreateProjectTask': {
         expect(variables.input.projectId).toBe(projectId);
         if (rejectWrite) {
           rejectWrite = false;
           return route.fulfill({ json: { errors: [{ message: 'Task write failed' }] } });
         }
-        const task: TaskFixture = { __typename: 'Task', id: 'new-task', completedDate: null, ...variables.input };
+        const task: TaskFixture = { __typename: 'Task', id: 'new-task', completedDate: null, assignee: null, ...variables.input };
         tasks.push(task);
         return route.fulfill({ json: { data: { createTask: task } } });
       }
@@ -195,9 +196,12 @@ test('the task board is read-only for an archived project owner', async ({ page 
   await expect(tasks.getByRole('button', { name: /Add task|Edit|Delete/ })).toHaveCount(0);
 });
 
-test('a project member cannot open the owner task board', async ({ page }) => {
+test('a project member without assigned tasks sees an empty board without owner actions', async ({ page }) => {
   await mockTasks(page, { canManage: false });
   await page.goto(projectPath);
   await expect(page.getByRole('heading', { name: 'Repair the porch' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Show tasks' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Show tasks' }).click();
+  const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
+  await expect(tasks.getByText('No assigned tasks yet.')).toBeVisible();
+  await expect(tasks.getByRole('button', { name: 'Add task' })).toHaveCount(0);
 });

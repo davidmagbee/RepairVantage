@@ -142,6 +142,11 @@ export const sharingMutations = {
       if (!member) return false;
       // Clear any older invitation for the same mailbox before removing access.
       await prisma.projectInvite.deleteMany({ where: { projectId: args.projectId, email: normalizedEmail(member.user.email) } });
+      // Clear assignments under the same project lock so accepting a later invitation cannot revive task access.
+      await prisma.task.updateMany({
+        where: { projectId: args.projectId, userId: args.userId },
+        data: { userId: null },
+      });
       await prisma.projectMember.delete({ where });
       return true;
     });

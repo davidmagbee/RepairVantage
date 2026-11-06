@@ -285,8 +285,7 @@ export default function ProjectDetails() {
               {project.canManage && <ProjectArchiveControl key={project.id} project={project} />}
             </div>
           </article>
-          {project.canManage && (
-            <div className="space-y-3">
+          <div className="space-y-3">
               <button
                 className="btn btn-outline"
                 type="button"
@@ -296,12 +295,11 @@ export default function ProjectDetails() {
               >
                 {tasksExpanded ? 'Hide tasks' : 'Show tasks'}
               </button>
-              {/* Fetch the task board when an owner opens it. */}
+              {/* Fetch authorized tasks and any owner roster when the reader opens the board. */}
               <div id="project-tasks">
-                {tasksExpanded && <ProjectTasks key={project.id} projectId={project.id} readOnly={Boolean(project.archivedAt)} />}
+                {tasksExpanded && <ProjectTasks key={project.id} projectId={project.id} readOnly={Boolean(project.archivedAt)} canManage={project.canManage} />}
               </div>
-            </div>
-          )}
+          </div>
           <ProjectComments key={project.id} project={project} />
           {project.canManage && <ProjectSharing key={`sharing-${project.id}`} projectId={project.id} archived={Boolean(project.archivedAt)} />}
           {project.canManage && !project.archivedAt && <ProjectDeleteControl key={`delete-${project.id}`} project={project} />}

@@ -42,4 +42,4 @@ To permanently delete an active project, select **Delete project permanently** a
 
 ## Project tasks
 
-On Project Details, select **Show tasks** to open the owner task board. Use **Add task** to create one, **Edit** to change its fields, and **Delete** to open a permanent deletion confirmation. Move a task between status columns by dragging it, or open **Edit** and select a status with the keyboard or touch. The task deadline field uses your browser’s local time. Owners can still read the board after archiving a project.
+On Project Details, select **Show tasks**. Owners see all project tasks and can add, edit, delete, and assign them to existing project members. Choose **Unassigned** to clear an assignment. Members see only tasks assigned to them and can edit those tasks on active projects. To change status, drag a task to a column or open **Edit** and select a status with the keyboard or touch. The task deadline field uses your browser’s local time. The board is read-only while the project is archived.
