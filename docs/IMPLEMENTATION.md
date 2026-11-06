@@ -51,7 +51,7 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 ## Dependencies and scheduling
 
 1. Define which task, part, and tool prerequisite edges are valid and when a prerequisite blocks work. Implement one edge type first. Reject self-links, forbidden cross-project links, and cycles, including conflicting concurrent writes. [Current dependency and event models](../server/prisma/schema.prisma)
-2. The first authorized schedule shows dated work alongside task assignees and required tools. Verify date-range edges and ownership before adding independently authored events.
+2. Open **Schedule** for an owner-scoped UTC calendar and timeline over existing project dates and task deadlines. It shows assigned members and required project tools. Set a task deadline to add it to the view. Authoring project dates and calendar events, and enforcing allocations, are separate slices.
 3. Add the Gantt view after date and dependency semantics settle. Verify display and editing against the same stored dates and prerequisites.
 
 ## Reporting, export, and documentation

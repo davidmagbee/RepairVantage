@@ -29,6 +29,7 @@ export default function Layout() {
             <Link to="/" className="text-lg font-bold">RepairVantage</Link>
             <Link to="/projects" className="link link-hover">Projects</Link>
             <Link to="/projects/inventory" className="link link-hover">Inventory</Link>
+            <Link to="/projects/schedule" className="link link-hover">Schedule</Link>
           </nav>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm sm:inline">{user?.name || user?.email}</span>

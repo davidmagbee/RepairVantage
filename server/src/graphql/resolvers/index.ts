@@ -2,6 +2,7 @@ import { Prisma, Project } from '../../generated/prisma/client';
 import { GraphQLScalarType, Kind } from 'graphql';
 import { authenticated, badInput, Context, lockProject, nameInput, projectNotFound, requireActiveOwnedProject, sharedProjectFields } from '../policy';
 import { inventoryMutations, inventoryQueries } from './inventory';
+import { scheduleQueries } from './schedule';
 import { sharingMutations, sharingProjectFields, sharingQueries } from './sharing';
 import { taskMutations, taskProjectFields, taskQueries, taskResolvers } from './tasks';
 
@@ -54,6 +55,7 @@ export const resolvers = {
 
   Query: {
     ...inventoryQueries,
+    ...scheduleQueries,
     ...sharingQueries,
     ...taskQueries,
     me: (_parent: unknown, _args: unknown, context: Context) =>
