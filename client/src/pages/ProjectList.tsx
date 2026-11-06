@@ -9,13 +9,16 @@ function ProjectCards({ projects }: { projects: Project[] }) {
     <ul className="grid gap-4 md:grid-cols-2">
       {projects.map((project) => (
         <li className="card bg-base-100 shadow" key={project.id}>
-          <div className="card-body">
-            <h3 className="card-title">
-              <Link className="link link-hover" to={`/projects/${project.id}`}>{project.name}</Link>
-            </h3>
+          {/* A single link spans the card, including its padding, with the project title as its accessible name. */}
+          <Link
+            className="card-body group rounded-[inherit] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            to={`/projects/${project.id}`}
+            aria-label={project.name}
+          >
+            <h3 className="card-title group-hover:underline group-focus-visible:underline">{project.name}</h3>
             <p className="badge badge-outline capitalize">{project.status.toLowerCase().replace(/_/g, ' ')}</p>
             {project.description && <p className="line-clamp-3 break-words">{project.description}</p>}
-          </div>
+          </Link>
         </li>
       ))}
     </ul>
