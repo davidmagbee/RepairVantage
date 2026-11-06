@@ -11,6 +11,14 @@ For coaching, use `$deliberate-practice` and ask to attempt the exercise before 
 
 ## Documentation checkpoint
 
+### Usage-limited sessions
+
+Write a resumable handoff before starting the final verification pass. Record the last verified commit, current failure, exact reproduction command, and release state. Recheck the shared usage meter before opening another slice or starting parallel work. Begin wrap-up several points above the requested reserve. In this session the meter moved from 97% to 99% used between checks.
+
+### Skill installs
+
+Check the tracked skill folder and provenance first. For a new install, preview selection in a disposable directory and verify the resulting file list before copying it into the repo. The `retro` install invocation selected all upstream skills despite the supplied filter, and the tracked copy already matched.
+
 Before every commit, review the staged change against all project docs. Include each affected document in the same commit as the behavior or decision it describes.
 
 | Change | Documentation to reconcile |

@@ -10,6 +10,14 @@ The combined run passed all 44 Node tests and 62 of 63 Chromium tests. The repor
 
 ## Manual QA
 
+### Resume order
+
+1. Run `CI=1 npm --prefix client test -- --forbid-only tests/project-report.spec.ts --trace on --timeout 10000`. Inspect browser exceptions and the export anchor before changing download timing again. Both delayed Blob revocation and a data URL failed to produce a download event in the session. Verify the downloaded CSV and then the print action.
+2. Run the full coverage gate on the exact candidate commit. Record the exit code, revision, and report path. A failed browser test aborts coverage generation. The 98.98% result belongs to the earlier core checkpoint.
+3. Open or update the PR before relying on hosted CI. This workflow runs on PRs and pushes to `main`. The published development branch alone provides no CI result. [Verify workflow](../.github/workflows/verify.yml)
+
+## Release walkthrough
+
 1. Archive and restore a disposable project. Verify shared reads and access revocation, then try confirmed deletion on a disposable project.
 2. Assign a task to a verified member. As that member, edit only the assigned task and its hours. Revoke membership and verify access ends.
 3. Set stock to 2 and an active project requirement to 4. Verify the shortfall is 2 and disappears when the project is archived.
