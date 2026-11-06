@@ -17,7 +17,7 @@ The dev listener defaults to port 4000. The Vite client forwards `/graphql` and 
 
 | Setting | Purpose |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection URL for the running server. Use the pooled endpoint and restricted role on Neon. |
+| `DATABASE_URL` | PostgreSQL connection URL for the running server. Use the pooled endpoint and restricted role on Neon. Production enforces [verified TLS](../docs/DEPLOYMENT.md#target). |
 | `DIRECT_DATABASE_URL` | Direct PostgreSQL connection URL for Prisma CLI database commands. For local development both variables can point to the same local database. Keep the production migration role off the web host. |
 | `APP_ORIGIN` | Browser origin with no trailing slash. Production requires HTTPS. |
 | `BETTER_AUTH_SECRET` | Random secret of at least 32 characters. Keep separate values per environment. |
@@ -38,7 +38,7 @@ TEST_DATABASE_URL="$RV_TEST_DATABASE_URL" npm --prefix server run test:integrati
 TEST_DATABASE_URL="$RV_TEST_DATABASE_URL" npm --prefix server run test:auth
 ```
 
-Set `RV_TEST_DATABASE_URL` to a PostgreSQL database on loopback whose name ends in `_test`. Apply migrations there first with `DIRECT_DATABASE_URL="$RV_TEST_DATABASE_URL" npm --prefix server run prisma:deploy`. Both integration suites create test-only records. API tests exercise GraphQL policy with a verified-session context. Auth tests exercise the HTTP email-code flow with an injected sender.
+Set `RV_TEST_DATABASE_URL` to a PostgreSQL database on loopback whose name ends in `_test`. Omit query parameters and URL fragments. Apply migrations there first with `DIRECT_DATABASE_URL="$RV_TEST_DATABASE_URL" npm --prefix server run prisma:deploy`. Both integration suites create test-only records. API tests exercise GraphQL policy with a verified-session context. Auth tests exercise the HTTP email-code flow with an injected sender.
 
 ## Release
 

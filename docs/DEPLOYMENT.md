@@ -31,5 +31,5 @@ Google sign-in requires a verified Gmail or Workspace mailbox. Other addresses c
 
 - Request `/`, `/health`, and `/ready`. Open and refresh a nested client route. Confirm GraphQL and auth paths receive API responses.
 - In clean browser sessions, complete Google consent and an emailed sign-in code. Verify logout and that a signed-out browser cannot open the private workspace. Test both providers with the same verified address before claiming account linking.
-- Create a real repair project, update status, and reopen it after signing out. Invite a second verified account. It can read and comment. Remove it and retry the private URL and old invite.
+- Create a real repair project and reopen it from the card padding. Save a status change, then save a different priority and reload. Verify both values persisted. Sign out and back in to check project access. Invite a second verified account and check that it can read and comment. Remove it and retry the private URL and old invite.
 - Publish a Showcase title and summary. Open the link signed out and check the public fields. Unpublish it and verify the URL stops resolving.

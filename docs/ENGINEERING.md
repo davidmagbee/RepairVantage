@@ -3,11 +3,24 @@
 ## Start and finish a slice
 
 1. Start in this checkout. Ask `$dev-session` for one observable outcome and one denial case if the slice changes access. Read only the owning source, matching [skill](agents/SKILLS.md), and relevant [roadmap milestone](ROADMAP.md).
-2. For a policy or workflow change, use `$grill-with-docs` to settle the decisions that affect users or persisted data. Use `$tdd` to reproduce one behavior through its real interface, then make it pass. For a bug with competing causes, use `$diagnosing-bugs` first.
+2. For a policy or workflow change, use `$grilling` to settle the decisions that affect users or persisted data. Use `$tdd` to reproduce one behavior through its real interface, then make it pass. For a bug with competing causes, use `$diagnosing-bugs` first.
 3. Run the owning package checks. Use `$dev-review` on the base diff, staged and unstaged changes, and relevant new files. For an auth change, verify allowed and denied behavior with separate accounts.
-4. Use the [PR template](../.github/pull_request_template.md). Record the commit or dirty state, check evidence, manual acceptance still due, and the next executable action. Add a delta when updating a pushed branch.
+4. Complete the documentation checkpoint. Use the [PR template](../.github/pull_request_template.md) to record check evidence, manual acceptance still due, and the next executable action.
 
 For coaching, use `$deliberate-practice` and ask to attempt the exercise before receiving hints. For planning, use the glossary and record durable decisions only when the tradeoff is hard to reverse. Use the tracker conventions when opening or triaging issues.
+
+## Documentation checkpoint
+
+Before every commit, review the staged change against all project docs. Include each affected document in the same commit as the behavior or decision it describes.
+
+| Change | Documentation to reconcile |
+| --- | --- |
+| User workflow, setup, or navigation | [Root README](../README.md), [client README](../client/README.md), [server README](../server/README.md) |
+| Feature scope, product decisions, or terminology | [Roadmap](ROADMAP.md), [implementation guide](IMPLEMENTATION.md), [glossary](../GLOSSARY.md), [domain conventions](agents/domain.md) |
+| Commands, tests, skills, or contributor workflow | [Engineering runbook](ENGINEERING.md), [agent instructions](../AGENTS.md), [skill routing](agents/SKILLS.md), and the relevant tracker conventions |
+| Hosting, environment, migration, or release | [Deployment runbook](DEPLOYMENT.md), [server README](../server/README.md), and the current release entry in the [roadmap](ROADMAP.md) |
+
+Before every push, review the full commit range being published. Verify affected links and commands, and reconcile the roadmap with the release state actually verified. Record the documents reviewed in the PR body. Include the documentation and verification delta for subsequent pushes.
 
 ## Local checks
 

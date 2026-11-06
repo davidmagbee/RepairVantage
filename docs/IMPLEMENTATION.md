@@ -1,14 +1,14 @@
 # RepairVantage implementation guide
 
-The original Cursor plan provides the feature inventory. Implement it with the repository's lockfiles and current stack. [Original plan](../.cursorrules) · [Roadmap](ROADMAP.md) · [Engineering runbook](ENGINEERING.md) · [Deployment runbook](DEPLOYMENT.md)
+The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its setup, database, backend, frontend, and identity phases map to the foundation below. The [roadmap](ROADMAP.md) sequences the product phases and tracks release status. Use the package lockfiles for dependencies. Test, refine, and update documentation throughout delivery. [Engineering runbook](ENGINEERING.md) · [Deployment runbook](DEPLOYMENT.md)
 
 ## Implemented foundation
 
 | Boundary | Current behavior and source |
 | --- | --- |
-| Runtime | React/Vite and Express/Apollo share one origin. Prisma uses PostgreSQL. Vercel packaging builds a reviewed commit and keeps browser assets separate from server runtime code. [App routes](../client/src/App.tsx) · [HTTP app](../server/src/app.ts) · [Packaging](../scripts/package-vercel.mjs) |
+| Runtime | React/Vite and Express/Apollo share one origin. Prisma 7 uses the PostgreSQL adapter for the application and a direct migration URL for the CLI. Production enforces TLS certificate and hostname verification. Vercel packaging builds a reviewed commit and keeps browser assets separate from server runtime code. [App routes](../client/src/App.tsx) · [Server setup](../server/README.md) · [Deployment](DEPLOYMENT.md) |
 | Identity | Better Auth resolves a verified principal through Google or email code. Workspace routes require a verified session. [Identity](../server/src/identity.mts) · [Private routes](../client/src/components/PrivateRoute.tsx) |
-| Projects | The UI creates projects with name and optional description, lists owned and shared projects, and lets owners change status. The owner editor for name and description is implemented in this checkout. The API already supports owner-scoped updates and deletion. [Project form](../client/src/pages/NewProject.tsx) · [Details](../client/src/pages/ProjectDetails.tsx) · [Resolvers](../server/src/graphql/resolvers/index.ts) |
+| Projects | Create projects with a name and optional description. Open owned and shared projects from anywhere on their cards. Owners can edit name, description, status, and priority. The API supports owner-scoped updates and deletion. [Project form](../client/src/pages/NewProject.tsx) · [Project list](../client/src/pages/ProjectList.tsx) · [Details](../client/src/pages/ProjectDetails.tsx) · [Resolvers](../server/src/graphql/resolvers/index.ts) |
 | Sharing | The owner copies an invitation link scoped to the recipient's verified email. Members can read shared details and comment. Owner controls include revocation, member removal, and Showcase publication. The Showcase projection contains its own title and summary, publication time, and current project status. [Sharing UI](../client/src/components/ProjectSharing.tsx) · [Sharing resolvers](../server/src/graphql/resolvers/sharing.ts) |
 | Reserved scope | Tasks have owner-scoped create and read operations. Parts, tools, dependencies, and calendar events have Prisma models. Workflow UI and the remaining API operations are future slices. [GraphQL schema](../server/src/graphql/schema/index.ts) · [Prisma schema](../server/prisma/schema.prisma) |
 
@@ -24,7 +24,7 @@ The original Cursor plan provides the feature inventory. Implement it with the r
 
 ## Project lifecycle
 
-**First slice** · Owner editing of project name and description on Project Details reuses the owner-scoped `updateProject` mutation. The editor submits these two fields independently of the status control.
+**Shipped** · Whole-card navigation works for owned and shared projects. Project Details uses the owner-scoped `updateProject` mutation for name, description, status, and priority. Status and priority save independently. [Browser test](../client/tests/projects.full-stack.spec.ts)
 
 - Prefill current values. Trim the name and enforce the API's existing validation. Clearing description persists a null value. Cancel leaves stored data intact. [Existing validator](../server/src/graphql/resolvers/index.ts)
 - On save, update the detail and list views. Reload and confirm the same values. On failure, keep edits available and report the error. Cover empty name, description clearing, and denied member or unrelated writes through GraphQL.

@@ -13,6 +13,10 @@ npm run dev -- --strictPort
 
 Open `http://localhost:5173`. Vite proxies `/api/auth` and `/graphql` to Express on loopback port 4000. The browser origin must match the server's configured origin for OAuth, cookies, and request validation.
 
+## Project navigation
+
+Open an owned or shared project by clicking anywhere on its card, or focus the card with Tab and press Enter. Owners can edit the project details and save status and priority independently. Members can read these fields and comment.
+
 ## Verification
 
 ```sh
@@ -22,7 +26,7 @@ npx --no-install playwright install chromium
 npm test
 ```
 
-The default Playwright suite uses intercepted HTTP responses. To exercise real cookie sessions, persistence, invitation acceptance, comments, and Showcase publishing, start the [disposable browser-test server](../server/test/browser-server.cjs) with a migrated local test database. Run the opt-in suite against that server.
+The default Playwright suite uses intercepted HTTP responses. To exercise real cookie sessions, owner edits and priority persistence, invitation acceptance, comments, and Showcase publishing, start the [disposable browser-test server](../server/test/browser-server.cjs) with a migrated local test database. Run the opt-in suite against that server.
 
 ```sh
 REAL_API=1 npm test -- tests/projects.full-stack.spec.ts
