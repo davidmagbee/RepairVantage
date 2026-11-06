@@ -22,6 +22,7 @@ npm --prefix client run dev
 Open `http://localhost:5173`. The dev server proxies GraphQL and authentication to the local Express process. Keep that hostname for both the browser and Google callback configuration.
 
 - [Engineering runbook and verification](docs/ENGINEERING.md)
+- [Implementation guide](docs/IMPLEMENTATION.md)
 - [Deployment and release gates](docs/DEPLOYMENT.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Project skill installation and provenance](docs/agents/SKILLS.md)
