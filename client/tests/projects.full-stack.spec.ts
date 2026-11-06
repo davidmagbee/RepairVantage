@@ -10,7 +10,11 @@ test.skip(process.env.REAL_API !== '1', 'Requires the disposable Better Auth and
 
 async function verifyEmail(page: Page, request: APIRequestContext, email: string) {
   await page.getByLabel('Email address').fill(email);
+  // Surface an HTTP rejection before waiting for the next form to appear.
+  const sent = page.waitForResponse(response => response.request().method() === 'POST'
+    && new URL(response.url()).pathname === '/api/auth/email-otp/send-verification-otp');
   await page.getByRole('button', { name: 'Email me a code' }).click();
+  expect((await sent).status()).toBe(200);
   await expect(page.getByLabel('One-time code')).toBeVisible();
 
   const response = await request.get(otpEndpoint, { params: { email } });
