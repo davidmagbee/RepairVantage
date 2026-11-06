@@ -4,11 +4,20 @@ import type { FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProjectSharing from '../components/ProjectSharing';
 import { privateOperation } from '../graphql/client';
-import { ADD_PROJECT_COMMENT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
+import { ADD_PROJECT_COMMENT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
 import type { Project, ProjectWithComments } from '../graphql/queries';
 
-const projectStatuses = ['PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
+const projectFieldControls = {
+  status: {
+    options: ['PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'],
+    mutation: UPDATE_PROJECT_STATUS,
+  },
+  priority: {
+    options: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+    mutation: UPDATE_PROJECT_PRIORITY,
+  },
+};
 
 function displayLabel(value: string) {
   return value.toLowerCase().replace(/_/g, ' ');
@@ -85,32 +94,35 @@ function ProjectDetailsEditor({ project }: { project: Project }) {
   );
 }
 
-function StatusControl({ project }: { project: Project }) {
-  const [updateStatus, { loading, error }] = useMutation(UPDATE_PROJECT_STATUS, {
+function ProjectFieldControl({ project, field }: { project: Project; field: keyof typeof projectFieldControls }) {
+  const { options, mutation } = projectFieldControls[field];
+  const savedValue = project[field];
+  const [updateField, { loading, error }] = useMutation(mutation, {
     context: privateOperation,
     onError: () => {},
   });
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const status = new FormData(event.currentTarget).get('status');
-    if (status !== project.status) void updateStatus({ variables: { id: project.id, status } });
+    const value = new FormData(event.currentTarget).get(field);
+    if (value !== savedValue) void updateField({ variables: { id: project.id, [field]: value } });
   }
 
   return (
-    <form className="space-y-2" key={project.status} onSubmit={submit}>
+    // Remount the uncontrolled select when this field saves. Other field drafts stay intact.
+    <form className="space-y-2" key={savedValue} onSubmit={submit}>
       <div className="flex flex-wrap items-end gap-3">
         <label className="form-control gap-1">
-          <span>Project status</span>
-          <select className="select select-bordered capitalize" name="status" defaultValue={project.status} disabled={loading}>
-            {projectStatuses.map((status) => <option key={status} value={status}>{displayLabel(status)}</option>)}
+          <span>Project {field}</span>
+          <select className="select select-bordered capitalize" name={field} defaultValue={savedValue} disabled={loading}>
+            {options.map(option => <option key={option} value={option}>{displayLabel(option)}</option>)}
           </select>
         </label>
         <button className="btn btn-primary" type="submit" disabled={loading}>
-          {loading ? 'Saving…' : 'Save status'}
+          {loading ? 'Saving…' : `Save ${field}`}
         </button>
       </div>
-      {error && <p className="alert alert-error" role="alert">Could not update project status. Try again.</p>}
+      {error && <p className="alert alert-error" role="alert">Could not update project {field}. Try again.</p>}
     </form>
   );
 }
@@ -213,7 +225,8 @@ export default function ProjectDetails() {
               {project.canManage && (
                 <>
                   <ProjectDetailsEditor key={project.id} project={project} />
-                  <StatusControl project={project} />
+                  <ProjectFieldControl key={`status-${project.id}`} project={project} field="status" />
+                  <ProjectFieldControl key={`priority-${project.id}`} project={project} field="priority" />
                 </>
               )}
             </div>

@@ -20,6 +20,15 @@ export const UPDATE_PROJECT_STATUS = gql`
   }
 `;
 
+export const UPDATE_PROJECT_PRIORITY = gql`
+  mutation UpdateProjectPriority($id: ID!, $priority: Priority!) {
+    updateProject(id: $id, input: { priority: $priority }) {
+      id
+      priority
+    }
+  }
+`;
+
 export const UPDATE_PROJECT_DETAILS = gql`
   mutation UpdateProjectDetails($id: ID!, $input: ProjectUpdateInput!) {
     updateProject(id: $id, input: $input) {

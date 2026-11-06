@@ -8,7 +8,7 @@ const { typeDefs } = require('../dist/graphql/schema');
 const { testDatabaseUrl } = require('./database-url.cjs');
 
 const projectQuery = `query ($id: ID!) {
-  project(id: $id) { id name description status notes budget canManage tasks { id } comments { body author { name } } }
+  project(id: $id) { id name description status priority notes budget canManage tasks { id } comments { body author { name } } }
 }`;
 const createProject = `mutation ($name: String!) {
   createProject(input: { name: $name, description: "Shared detail", notes: "Owner note", budget: 12 }) { id canManage }
@@ -241,6 +241,27 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
     const reopened = (await data(projectQuery, { id }, owner)).project;
     assert.equal(reopened.name, 'Updated repair');
     assert.equal(reopened.description, null);
+  });
+
+  await t.test('owners can update priority independently of status', async () => {
+    const update = `mutation ($id: ID!, $priority: Priority!) {
+      updateProject(id: $id, input: { priority: $priority }) { priority status }
+    }`;
+    const before = (await data(projectQuery, { id }, owner)).project;
+    assert.equal(before.priority, 'MEDIUM');
+
+    // The same owner check protects priority even when a member calls GraphQL directly.
+    const variables = { id, priority: 'CRITICAL' };
+    await rejects(update, variables, null, 'UNAUTHENTICATED');
+    await rejects(update, variables, member, 'NOT_FOUND');
+    await rejects(update, variables, stranger, 'NOT_FOUND');
+    assert.equal((await data(projectQuery, { id }, owner)).project.priority, 'MEDIUM');
+
+    const { updateProject } = await data(update, variables, owner);
+    assert.deepEqual({ ...updateProject }, { priority: 'CRITICAL', status: before.status });
+    const shared = (await data(projectQuery, { id }, member)).project;
+    assert.equal(shared.priority, 'CRITICAL');
+    assert.equal(shared.status, before.status);
   });
 
   await t.test('unlisted Showcase reflects status and stays separate from private data', async () => {

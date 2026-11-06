@@ -56,6 +56,9 @@ test('owner shares a real project with a new member and publishes a separate Sho
     await page.getByLabel('Project status').selectOption('IN_PROGRESS');
     await page.getByRole('button', { name: 'Save status' }).click();
     await expect(page.locator('dd', { hasText: 'in progress' })).toBeVisible();
+    await page.getByLabel('Project priority').selectOption('HIGH');
+    await page.getByRole('button', { name: 'Save priority' }).click();
+    await expect(page.locator('dd', { hasText: /^high$/ })).toBeVisible();
 
     await page.getByLabel('Public title').fill(publicTitle);
     await page.getByLabel('Public summary').fill('Inspection is complete and parts are on order.');
@@ -91,8 +94,10 @@ test('owner shares a real project with a new member and publishes a separate Sho
     await expect(invited.getByRole('heading', { name: updatedName })).toBeVisible();
     await expect(invited.getByText(updatedDescription)).toBeVisible();
     await expect(invited.locator('dd', { hasText: 'in progress' })).toBeVisible();
+    await expect(invited.locator('dd', { hasText: /^high$/ })).toBeVisible();
     await expect(invited.getByRole('button', { name: 'Edit details' })).toHaveCount(0);
     await expect(invited.getByRole('button', { name: 'Save status' })).toHaveCount(0);
+    await expect(invited.getByRole('button', { name: 'Save priority' })).toHaveCount(0);
     await expect(invited.getByRole('region', { name: 'Project sharing' })).toHaveCount(0);
     await invited.getByLabel('Comment', { exact: true }).fill(comment);
     await invited.getByRole('button', { name: 'Post comment' }).click();
@@ -104,6 +109,7 @@ test('owner shares a real project with a new member and publishes a separate Sho
     await checkpointCoverage(page);
     await page.reload();
     await expect(page.getByRole('heading', { name: updatedName })).toBeVisible();
+    await expect(page.getByLabel('Project priority')).toHaveValue('HIGH');
     await expect(page.getByText(comment)).toBeVisible();
     await page.getByRole('button', { name: 'Unpublish', exact: true }).click();
     await expect(page.getByText('Showcase unpublished.')).toBeVisible();
