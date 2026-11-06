@@ -104,6 +104,10 @@ test('email-code enrollment issues a verified session and logout revokes it', as
 
     const signIn = '/api/auth/sign-in/email-otp';
     const input = { email, otp: codes[0].code, name: 'Integration Owner' };
+    const invalidName = await post(signIn, { ...input, name: 'x'.repeat(121) });
+    assert.equal(invalidName.status, 400);
+    assert.match((await invalidName.json()).message, /name of at most 120 characters/);
+    assert.equal(invalidName.headers.getSetCookie().length, 0);
     const wrongCode = codes[0].code === '000000' ? '111111' : '000000';
     assert.equal((await post(signIn, { ...input, otp: wrongCode })).ok, false);
     const session = await post(signIn, input);
@@ -188,6 +192,7 @@ test('email delivery accepts a Resend response and masks provider failures', asy
 
   const sender = 'sender@example.test';
   const { request } = await providerHarness(t, { RESEND_API_KEY: 'test-only-key', AUTH_EMAIL_FROM: sender }, async (prisma, config) => {
+    await prisma.user.deleteMany({ where: { email: emails[0] } });
     await prisma.verification.deleteMany({ where: { identifier: { in: emails.map(email => `sign-in-otp-${email}`) } } });
     const keys = emails.map(email => {
       const digest = createHmac('sha256', config.authSecret).update(`recipient:${email}`).digest('hex');
@@ -209,6 +214,10 @@ test('email delivery accepts a Resend response and masks provider failures', asy
     assert.equal(message.to, emails[index]);
     assert.match(message.text, /Your RepairVantage code is \d{6}/);
   }
+  const code = calls[0].message.text.match(/code is (\d{6})/)[1];
+  const session = await request('/api/auth/sign-in/email-otp', { email: emails[0], otp: code }, 4);
+  assert.equal(session.status, 200);
+  assert.equal((await session.json()).user.email, emails[0]);
 });
 
 test('Google OAuth accepts authoritative mailboxes and rejects unproven third-party addresses', async t => {

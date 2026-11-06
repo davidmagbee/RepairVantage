@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import process from 'node:process';
-import { expect, test } from '@playwright/test';
+import { checkpointCoverage, coverPage, expect, test } from './fixtures';
 import type { APIRequestContext, Page } from '@playwright/test';
 
 const origin = 'http://localhost:5173';
@@ -25,10 +25,13 @@ test('owner shares a real project with a new member and publishes a separate Sho
   const memberEmail = `member-${randomUUID()}@example.test`;
   const projectName = 'Inspect rear axle assembly';
   const privateDescription = 'Owner workspace notes about the axle inspection.';
+  const updatedName = 'Replace rear axle bearing';
+  const updatedDescription = 'Replace the worn bearing found during the inspection.';
   const publicTitle = 'Rear axle repair progress';
   const comment = 'The replacement bearing is ready.';
   const anonymous = await browser.newContext();
   const member = await browser.newContext();
+  const saveCoverage: (() => Promise<void>)[] = [];
 
   try {
     await page.goto('/register');
@@ -41,6 +44,11 @@ test('owner shares a real project with a new member and publishes a separate Sho
     await page.getByRole('button', { name: 'Create project' }).click();
     await expect(page.getByRole('heading', { name: projectName })).toBeVisible();
     const projectUrl = page.url();
+    await page.getByRole('button', { name: 'Edit details' }).click();
+    await page.getByLabel('Project name').fill(updatedName);
+    await page.getByLabel('Description (optional)').fill(updatedDescription);
+    await page.getByRole('button', { name: 'Save details' }).click();
+    await expect(page.getByRole('heading', { name: updatedName })).toBeVisible();
     await page.getByLabel('Project status').selectOption('IN_PROGRESS');
     await page.getByRole('button', { name: 'Save status' }).click();
     await expect(page.locator('dd', { hasText: 'in progress' })).toBeVisible();
@@ -54,9 +62,11 @@ test('owner shares a real project with a new member and publishes a separate Sho
     expect(new URL(showcaseUrl).origin).toBe(origin);
 
     const visitor = await anonymous.newPage();
+    saveCoverage.push(await coverPage(visitor));
     await visitor.goto(showcaseUrl);
     await expect(visitor.getByRole('heading', { name: publicTitle })).toBeVisible();
-    await expect(visitor.getByText(privateDescription)).toHaveCount(0);
+    await expect(visitor.getByText(updatedDescription)).toHaveCount(0);
+    await checkpointCoverage(visitor);
     await visitor.goto(projectUrl);
     await expect(visitor.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 
@@ -69,39 +79,51 @@ test('owner shares a real project with a new member and publishes a separate Sho
     expect(new URL(inviteUrl).origin).toBe(origin);
 
     const invited = await member.newPage();
+    saveCoverage.push(await coverPage(invited));
     await invited.goto(inviteUrl);
     await invited.getByRole('link', { name: 'Create account' }).click();
     await verifyEmail(invited, request, memberEmail);
     await invited.getByRole('button', { name: 'Accept invitation' }).click();
-    await expect(invited.getByRole('heading', { name: projectName })).toBeVisible();
+    await expect(invited.getByRole('heading', { name: updatedName })).toBeVisible();
+    await expect(invited.getByText(updatedDescription)).toBeVisible();
     await expect(invited.locator('dd', { hasText: 'in progress' })).toBeVisible();
+    await expect(invited.getByRole('button', { name: 'Edit details' })).toHaveCount(0);
     await expect(invited.getByRole('button', { name: 'Save status' })).toHaveCount(0);
     await expect(invited.getByRole('region', { name: 'Project sharing' })).toHaveCount(0);
     await invited.getByLabel('Comment', { exact: true }).fill(comment);
     await invited.getByRole('button', { name: 'Post comment' }).click();
     await expect(invited.getByText(comment)).toBeVisible();
     await invited.getByRole('link', { name: 'Back to projects' }).click();
-    await invited.getByRole('region', { name: 'Shared with you' }).getByRole('link', { name: projectName }).click();
+    await invited.getByRole('region', { name: 'Shared with you' }).getByRole('link', { name: updatedName }).click();
     await expect(invited.getByText(comment)).toBeVisible();
 
+    await checkpointCoverage(page);
     await page.reload();
+    await expect(page.getByRole('heading', { name: updatedName })).toBeVisible();
     await expect(page.getByText(comment)).toBeVisible();
     await page.getByRole('button', { name: 'Unpublish', exact: true }).click();
     await expect(page.getByText('Showcase unpublished.')).toBeVisible();
     await expect(page.getByLabel('Public Showcase link')).toHaveCount(0);
+    await checkpointCoverage(visitor);
     await visitor.goto(showcaseUrl);
     await expect(visitor.getByRole('heading', { name: 'Showcase unavailable' })).toBeVisible();
 
     await page.getByRole('button', { name: `Remove ${memberEmail}`, exact: true }).click();
     await expect(page.getByRole('button', { name: `Remove ${memberEmail}`, exact: true })).toHaveCount(0);
+    await checkpointCoverage(invited);
     await invited.reload();
     await expect(invited.getByRole('heading', { name: 'Project not found' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Sign out' }).click();
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await checkpointCoverage(page);
     await page.goto(projectUrl);
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   } finally {
-    await Promise.all([anonymous.close(), member.close()]);
+    try {
+      await Promise.all(saveCoverage.map(save => save()));
+    } finally {
+      await Promise.all([anonymous.close(), member.close()]);
+    }
   }
 });

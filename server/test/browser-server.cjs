@@ -3,17 +3,12 @@ const { randomBytes } = require('node:crypto');
 const express = require('express');
 const { createApplication } = require('../dist/app.js');
 const { readConfig } = require('../dist/config.js');
-
-const databaseUrl = process.env.TEST_DATABASE_URL;
-const target = databaseUrl && new URL(databaseUrl);
-if (!target || !['127.0.0.1', 'localhost', '[::1]'].includes(target.hostname) || !target.pathname.endsWith('_test')) {
-  throw new Error('Set TEST_DATABASE_URL to a migrated disposable loopback database ending in _test');
-}
+const { testDatabaseUrl } = require('./database-url.cjs');
 
 const codes = new Map();
 const application = createApplication(readConfig({
   APP_ORIGIN: 'http://localhost:5173',
-  DATABASE_URL: databaseUrl,
+  DATABASE_URL: testDatabaseUrl().toString(),
   BETTER_AUTH_SECRET: randomBytes(32).toString('base64url'),
 }), async (email, code) => {
   if (!email.endsWith('@example.test')) throw new Error('Use a synthetic @example.test address');

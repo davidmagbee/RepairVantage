@@ -5,6 +5,7 @@ const { ApolloServer } = require('@apollo/server');
 const { createPrismaClient } = require('../dist/db');
 const { resolvers } = require('../dist/graphql/resolvers');
 const { typeDefs } = require('../dist/graphql/schema');
+const { testDatabaseUrl } = require('./database-url.cjs');
 
 const projectQuery = `query ($id: ID!) {
   project(id: $id) { id name description status notes budget canManage tasks { id } comments { body author { name } } }
@@ -25,6 +26,8 @@ const removeMember = `mutation ($id: ID!, $userId: ID!) {
 const revokeInvite = `mutation ($id: ID!, $inviteId: ID!) {
   revokeProjectInvite(projectId: $id, id: $inviteId)
 }`;
+const listInvites = `query ($id: ID!) { projectInvites(projectId: $id) { id email } }`;
+const listMembers = `query ($id: ID!) { projectMembers(projectId: $id) { user { id email } } }`;
 const publish = `mutation ($id: ID!) {
   publishProject(projectId: $id, title: "Public title", summary: "Public summary") { slug title status }
 }`;
@@ -37,13 +40,7 @@ const comment = `mutation ($id: ID!) {
 }`;
 
 test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', async t => {
-  assert.ok(process.env.TEST_DATABASE_URL, 'Set TEST_DATABASE_URL to a migrated disposable PostgreSQL database');
-  const url = new URL(process.env.TEST_DATABASE_URL);
-  // These tests write fixture rows. Never accept a hosted database or a non-test database.
-  assert.match(url.protocol, /^postgres(?:ql)?:$/);
-  assert.match(url.hostname, /^(localhost|127\.0\.0\.1|\[::1\])$/);
-  assert.match(url.pathname, /_test$/);
-  const prisma = createPrismaClient(url.toString());
+  const prisma = createPrismaClient(testDatabaseUrl().toString());
   const apollo = new ApolloServer({ typeDefs, resolvers });
   const userIds = [];
   t.after(async () => {
@@ -110,6 +107,57 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
     assert.equal(dashboardData.totalProjects, 1);
     assert.equal(dashboardData.projectsByStatus[0].count, 1);
     assert.notEqual(id, otherProject.id);
+    await data(`mutation ($id: ID!) {
+      updateProject(id: $id, input: { status: COMPLETED }) { status }
+    }`, { id: otherProject.id }, stranger);
+    const completed = '{ dashboardData { totalProjects completedProjects } }';
+    for (const [account, completedProjects] of [[owner, 0], [stranger, 1]]) {
+      const result = await data(completed, {}, account);
+      assert.equal(result.dashboardData.totalProjects, 1);
+      assert.equal(result.dashboardData.completedProjects, completedProjects);
+    }
+  });
+
+  await t.test('task dates validate and upcoming work is visible only to the owner', async () => {
+    const createTask = `mutation ($input: TaskInput!) {
+      createTask(input: $input) { id dueDate project { id } }
+    }`;
+    const dueDate = new Date(Date.now() + 86_400_000).toISOString();
+    const input = { projectId: id, name: 'Inspect the new part', dueDate };
+    const { createTask: task } = await data(createTask, { input }, owner);
+    assert.deepEqual({ dueDate: task.dueDate, projectId: task.project.id }, { dueDate, projectId: id });
+
+    const dashboard = '{ dashboardData { upcomingDeadlines { id dueDate } } }';
+    assert.equal((await data(dashboard, {}, owner)).dashboardData.upcomingDeadlines[0].id, task.id);
+    assert.deepEqual((await data(dashboard, {}, stranger)).dashboardData.upcomingDeadlines, []);
+    const literal = await data(`mutation ($id: ID!) {
+      createTask(input: { projectId: $id, name: "Scheduled task", dueDate: ${JSON.stringify(dueDate)} }) { dueDate }
+    }`, { id }, owner);
+    assert.equal(literal.createTask.dueDate, dueDate);
+    const malformed = await execute(createTask, { input: { ...input, dueDate: 'tomorrow' } }, owner);
+    assert.match(malformed.errors[0].message, /Expected an ISO 8601 date/);
+    const impossible = await execute(createTask, { input: { ...input, dueDate: '2026-19-03T00:00:00Z' } }, owner);
+    assert.match(impossible.errors[0].message, /Invalid date and time/);
+    const nonStringDate = await execute(`mutation ($id: ID!) {
+      createTask(input: { projectId: $id, name: "Invalid", dueDate: 42 }) { id }
+    }`, { id }, owner);
+    assert.match(nonStringDate.errors[0].message, /Expected an ISO 8601 date/);
+    await rejects(createTask, { input: { ...input, description: 'x'.repeat(2001) } }, owner, 'BAD_USER_INPUT');
+    await rejects(createTask, { input: { ...input, status: null } }, owner, 'BAD_USER_INPUT');
+  });
+
+  await t.test('invalid sharing inputs cannot create an invitation, comment, or Showcase', async () => {
+    for (const email of ['not-an-email', 'x'.repeat(250) + '@example.test', owner.email.toUpperCase()]) {
+      await rejects(invite, { id, email }, owner, 'BAD_USER_INPUT');
+    }
+    await rejects(accept, { token: 'truncated-token' }, member, 'INVITE_UNAVAILABLE');
+    await rejects(`mutation ($id: ID!) {
+      addProjectComment(projectId: $id, body: " ") { id }
+    }`, { id }, owner, 'BAD_USER_INPUT');
+    await rejects(`mutation ($id: ID!, $title: String!) {
+      publishProject(projectId: $id, title: $title, summary: "Summary") { slug }
+    }`, { id, title: 'x'.repeat(121) }, owner, 'BAD_USER_INPUT');
+    assert.equal((await data(listInvites, { id }, owner)).projectInvites.length, 0);
   });
 
   await t.test('expired, revoked, replaced, wrong-account and concurrent invitation claims', async () => {
@@ -120,13 +168,17 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
     assert.match(expired.token, /^[\w-]{43}$/);
     await prisma.projectInvite.update({ where: { id: expired.invite.id }, data: { expiresAt: new Date(0) } });
     await rejects(accept, { token: expired.token }, member, 'INVITE_UNAVAILABLE');
+    assert.equal((await data(listInvites, { id }, owner)).projectInvites.length, 0);
 
     const revoked = await issue();
+    await rejects(revokeInvite, { id, inviteId: revoked.invite.id }, stranger, 'NOT_FOUND');
     assert.equal((await data(revokeInvite, { id, inviteId: revoked.invite.id }, owner)).revokeProjectInvite, true);
     await rejects(accept, { token: revoked.token }, member, 'INVITE_UNAVAILABLE');
     const old = await issue();
     const current = await issue();
     assert.notEqual(current.invite.id, old.invite.id);
+    const active = (await data(listInvites, { id }, owner)).projectInvites;
+    assert.deepEqual(active.map(({ id, email }) => ({ id, email })), [{ ...current.invite }]);
     assert.equal((await data(revokeInvite, { id, inviteId: old.invite.id }, owner)).revokeProjectInvite, false);
     assert.notEqual((await prisma.projectInvite.findUnique({ where: { id: current.invite.id } })).tokenHash, current.token);
     await rejects(accept, { token: old.token }, member, 'INVITE_UNAVAILABLE');
@@ -155,7 +207,10 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
     assert.deepEqual(shared.map(({ id, notes, budget }) => ({ id, notes, budget })), [{ id, notes: null, budget: null }]);
     await rejects(updateStatus, { id }, member, 'NOT_FOUND');
     await rejects(publish, { id }, member, 'NOT_FOUND');
-    await rejects('query ($id: ID!) { projectMembers(projectId: $id) { user { id } } }', { id }, member, 'NOT_FOUND');
+    await rejects(listMembers, { id }, member, 'NOT_FOUND');
+    await rejects(listInvites, { id }, member, 'NOT_FOUND');
+    const members = (await data(listMembers, { id }, owner)).projectMembers;
+    assert.deepEqual(members.map(({ user }) => ({ id: user.id, email: user.email })), [{ id: member.id, email: member.email }]);
     const { addProjectComment } = await data(comment, { id }, member);
     assert.equal(addProjectComment.body, 'Member update');
     assert.equal(addProjectComment.author.name, member.name);
@@ -192,6 +247,9 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
     const { publishProject: publicProject } = await data(publish, { id }, owner);
     assert.match(publicProject.slug, /^[\w-]{32}$/);
     assert.notEqual(publicProject.slug, id);
+    const projectWithShowcase = 'query ($id: ID!) { project(id: $id) { showcase { slug } } }';
+    assert.equal((await data(projectWithShowcase, { id }, member)).project.showcase, null);
+    assert.equal((await data(projectWithShowcase, { id }, owner)).project.showcase.slug, publicProject.slug);
     assert.equal((await data(showcase, { slug: id }, null)).showcaseProject, null);
     assert.equal((await data(updateStatus, { id }, owner)).updateProject.status, 'IN_PROGRESS');
     const { showcaseProject } = await data(showcase, { slug: publicProject.slug }, null);
@@ -210,6 +268,8 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
 
   await t.test('membership removal ends read and comment access', async () => {
     await rejects(invite, { id, email: member.email }, owner, 'BAD_USER_INPUT');
+    await rejects(removeMember, { id, userId: member.id }, stranger, 'NOT_FOUND');
+    assert.equal((await data(removeMember, { id, userId: stranger.id }, owner)).removeProjectMember, false);
     // Simulate a stale link left by older behavior, then race redemption against removal.
     const token = randomBytes(32).toString('base64url');
     await prisma.projectInvite.create({
@@ -230,5 +290,14 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
     assert.equal((await data(projectQuery, { id }, member)).project, null);
     await rejects(comment, { id }, member, 'NOT_FOUND');
     await rejects(accept, { token }, member, 'INVITE_UNAVAILABLE');
+  });
+
+  await t.test('owner deletion removes both the workspace project and its public link', async () => {
+    const { project: published } = await data('query ($id: ID!) { project(id: $id) { showcase { slug } } }', { id }, owner);
+    assert.ok(published.showcase?.slug);
+    const deleted = await data('mutation ($id: ID!) { deleteProject(id: $id) }', { id }, owner);
+    assert.equal(deleted.deleteProject, true);
+    assert.equal((await data(projectQuery, { id }, owner)).project, null);
+    assert.equal((await data(showcase, { slug: published.showcase.slug }, null)).showcaseProject, null);
   });
 });

@@ -45,17 +45,8 @@ jobs:
       - run: npm ci --prefix server
       - run: npm --prefix client run lint
       - run: npm --prefix client run build
-      - run: npm --prefix server run build
-      - run: npm --prefix server test
       - run: npm --prefix server run prisma:deploy
-      - run: npm --prefix server run test:integration
-      - run: npm --prefix server run test:auth
       - run: npx --no-install playwright install --with-deps chromium
         working-directory: client
-      - name: Verify workspace and sharing in Chromium
-        run: |
-          node server/test/browser-server.cjs &
-          api_pid=$!
-          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
-          curl --fail --silent --show-error --retry 10 --retry-connrefused http://127.0.0.1:4000/ready
-          REAL_API=1 npm --prefix client test
+      - name: Verify the API and browser workflow and measure application coverage
+        run: node scripts/coverage.mjs --minimum-lines=99

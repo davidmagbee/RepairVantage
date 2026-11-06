@@ -34,6 +34,12 @@ npm --prefix server run test:auth
 
 Run `npm --prefix client test` for Chromium tests with mocked network boundaries. For the real local workflow, start `node server/test/browser-server.cjs` with the disposable URL, then run `REAL_API=1 npm --prefix client test`. The test server sends codes to a loopback-only mail sink. CI installs Chromium and runs this path against a disposable service database.
 
+## Application coverage
+
+With Chromium installed and the disposable `TEST_DATABASE_URL` migrated, run `node scripts/coverage.mjs` from the repository root. Use a test URL without query parameters. It builds the server, runs the Node suites and Chromium against a local test API, then combines source-mapped coverage in a fresh `coverage/run-*/report/` directory. Ports 4000 and 5173 are reserved for the run. Keep the normal development servers stopped while it runs.
+
+`node scripts/coverage.mjs --check` requires 100% V8 source-line coverage. A partially executed line counts as uncovered. CI enforces a 99% line floor using `--minimum-lines=99`. The report includes `client/src`, `server/src`, and the deployed Express entry. The check rejects missing source files. Generated code, declarations, and test or build tooling are outside the denominator. Browser tests that reload or navigate away from a document checkpoint its counters before navigation. [Coverage scope](IMPLEMENTATION.md)
+
 ## Local Codex harness
 
 The project is registered in the machine-local Modular Codex Harness. The helper is optional. All checks have direct package commands above.

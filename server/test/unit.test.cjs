@@ -37,3 +37,19 @@ test('public lookups reject malformed slugs and have no list operation', async (
   const listing = await operation('{ showcaseProjects { title } }');
   assert.equal(listing.errors[0].extensions.code, 'GRAPHQL_VALIDATION_FAILED');
 });
+
+test('DateTime serializes database dates and rejects an invalid resolver result', () => {
+  const iso = '2026-11-06T00:00:00.000Z';
+  assert.equal(resolvers.DateTime.serialize(new Date(iso)), iso);
+  assert.throws(() => resolvers.DateTime.serialize(iso), /Expected a Date result/);
+});
+
+test('project writes preserve unexpected persistence failures for the error boundary', async () => {
+  const failure = new Error('Synthetic database outage');
+  const user = { id: 'owner', email: 'owner@example.test', emailVerified: true };
+  const prisma = { project: { update: async () => { throw failure; } } };
+  await assert.rejects(
+    resolvers.Mutation.updateProject(null, { id: 'project', input: { name: 'Changed' } }, { user, prisma }),
+    error => error === failure,
+  );
+});
