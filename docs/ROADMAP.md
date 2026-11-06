@@ -14,7 +14,7 @@
 
 | Phase | Scope | Exit |
 | --- | --- | --- |
-| 1. Project lifecycle | Owner edits project name and description first. Later define lifecycle and archival behavior. | Save and clear descriptions. Verify reload, validation, and denied member or unrelated writes. Agree on archive and deletion effects before exposing controls. |
+| 1. Project lifecycle | Owner editing of name and description is implemented locally. Next, add read-only archive and restore while preserving existing sharing. | Verify edit and clear after reload. Verify archived writes are denied while existing members and Showcase visitors retain read access. |
 | 2. Tasks | Owner creates, lists, edits, and completes project tasks. Add assignment and an accessible board after the status rules settle. | Task changes persist and stay within the intended project. Define whether assignment grants access. |
 | 3. Parts and tools | Add owner-scoped catalogs and project or task assignments. | Define ownership and quantity semantics. Prevent cross-owner links and conflicting allocations. |
 | 4. Dependencies and scheduling | Add prerequisite rules, then calendar and Gantt views over project and task dates. | Reject invalid edges and cycles. Agree on time zones, all-day events, and which dates drive the timeline. |
@@ -23,4 +23,4 @@
 
 **Target** · 100% line coverage across executable application code. Report branch coverage alongside it. Run coverage work alongside the lifecycle slice and increase the CI floor as gaps close. [Implementation guide](IMPLEMENTATION.md) · [Current CI](../.github/workflows/verify.yml)
 
-**Open decisions** · Archive, restore, and deletion effects. Task transitions, assignment, and viewer access. Inventory and schedule semantics. Report calculations and export rules. Record each decision before starting its first dependent slice. [Implementation guide](IMPLEMENTATION.md)
+**Open decisions** · Permanent deletion. Task transitions, assignment, and viewer access. Inventory and schedule semantics. Report calculations and export rules. Record each decision before starting its first dependent slice. [Implementation guide](IMPLEMENTATION.md)
