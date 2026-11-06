@@ -1,3 +1,5 @@
+import { taskMutationFields, taskQueryFields, taskTypeFields } from './tasks';
+
 // The API exposes supported operations. Remaining Prisma models are reserved for later slices.
 export const typeDefs = `
   scalar DateTime
@@ -5,7 +7,6 @@ export const typeDefs = `
   enum Role { USER ADMIN }
   enum ProjectStatus { PLANNED IN_PROGRESS ON_HOLD COMPLETED CANCELLED }
   enum Priority { LOW MEDIUM HIGH CRITICAL }
-  enum TaskStatus { TODO IN_PROGRESS REVIEW COMPLETED BLOCKED }
 
   type User {
     id: ID!
@@ -36,17 +37,7 @@ export const typeDefs = `
     comments: [ProjectComment!]!
   }
 
-  type Task {
-    id: ID!
-    name: String!
-    description: String
-    status: TaskStatus!
-    dueDate: DateTime
-    createdAt: DateTime!
-    updatedAt: DateTime!
-    project: Project!
-  }
-
+  ${taskTypeFields}
   type DashboardData {
     totalProjects: Int!
     completedProjects: Int!
@@ -89,14 +80,6 @@ export const typeDefs = `
     notes: String
     budget: Float
   }
-  input TaskInput {
-    name: String!
-    description: String
-    status: TaskStatus
-    dueDate: DateTime
-    projectId: ID!
-  }
-
   type Query {
     me: User!
     project(id: ID!): Project
@@ -105,8 +88,7 @@ export const typeDefs = `
     projectMembers(projectId: ID!): [ProjectMember!]!
     projectInvites(projectId: ID!): [ProjectInvite!]!
     showcaseProject(slug: String!): ShowcaseProject
-    task(id: ID!): Task
-    tasks(projectId: ID, status: TaskStatus): [Task!]!
+    ${taskQueryFields}
     dashboardData: DashboardData!
   }
   type Mutation {
@@ -115,7 +97,7 @@ export const typeDefs = `
     archiveProject(id: ID!): Project!
     restoreProject(id: ID!): Project!
     deleteProject(id: ID!): Boolean!
-    createTask(input: TaskInput!): Task!
+    ${taskMutationFields}
     inviteToProject(projectId: ID!, email: String!): ProjectInvitation!
     acceptProjectInvite(token: String!): Project!
     revokeProjectInvite(projectId: ID!, id: ID!): Boolean!

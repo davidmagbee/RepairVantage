@@ -1,13 +1,13 @@
-import { Prisma, Project, Task, TaskStatus } from '../../generated/prisma/client';
+import { Prisma, Project } from '../../generated/prisma/client';
 import { GraphQLScalarType, Kind } from 'graphql';
 import { authenticated, badInput, Context, lockProject, nameInput, projectNotFound, requireActiveOwnedProject, sharedProjectFields } from '../policy';
 import { sharingMutations, sharingProjectFields, sharingQueries } from './sharing';
+import { taskMutations, taskProjectFields, taskQueries, taskResolvers } from './tasks';
 
 export type { Context } from '../policy';
 
 type ProjectInput = Pick<Prisma.ProjectUncheckedCreateInput, 'name' | 'description' | 'status' | 'priority' | 'startDate' | 'endDate' | 'notes' | 'budget'>;
 type ProjectUpdateInput = Partial<ProjectInput>;
-type TaskInput = { projectId: string; name: string; description?: string | null; status?: TaskStatus; dueDate?: Date | null };
 
 function dateValue(value: unknown) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(value)) badInput('Expected an ISO 8601 date and time');
@@ -53,6 +53,7 @@ export const resolvers = {
 
   Query: {
     ...sharingQueries,
+    ...taskQueries,
     me: (_parent: unknown, _args: unknown, context: Context) =>
       context.prisma.user.findUniqueOrThrow({
         where: { id: ownerId(context) },
@@ -68,10 +69,6 @@ export const resolvers = {
     },
     projects: (_parent: unknown, _args: unknown, context: Context) =>
       context.prisma.project.findMany({ where: { userId: ownerId(context) }, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }] }),
-    task: (_parent: unknown, { id }: { id: string }, context: Context) =>
-      context.prisma.task.findUnique({ where: { id, project: { userId: ownerId(context) } } }),
-    tasks: (_parent: unknown, { projectId, status }: { projectId?: string; status?: TaskStatus }, context: Context) =>
-      context.prisma.task.findMany({ where: { projectId, status, project: { userId: ownerId(context) } } }),
     dashboardData: async (_parent: unknown, _args: unknown, context: Context) => {
       const userId = ownerId(context);
       const now = new Date();
@@ -101,6 +98,7 @@ export const resolvers = {
 
   Mutation: {
     ...sharingMutations,
+    ...taskMutations,
     createProject: (_parent: unknown, { input }: { input: ProjectInput }, context: Context) => {
       const userId = ownerId(context);
       validateProject(input);
@@ -127,29 +125,13 @@ export const resolvers = {
         return true;
       });
     },
-    createTask: (_parent: unknown, { input }: { input: TaskInput }, context: Context) => {
-      const userId = ownerId(context);
-      const { projectId, ...fields } = input;
-      if (fields.description && fields.description.length > 2000) badInput('Description must be at most 2,000 characters');
-      if (fields.status === null) badInput('Status cannot be null');
-      return context.prisma.$transaction(async prisma => {
-        await requireActiveOwnedProject(prisma, projectId, userId);
-        return prisma.task.create({
-          data: { ...fields, name: nameInput(input.name), projectId, userId },
-        });
-      });
-    },
   },
 
   Project: {
     ...sharingProjectFields,
+    ...taskProjectFields,
     // Owners retain access-reduction controls even when an archived project freezes edits.
     canManage: (project: Project, _args: unknown, context: Context) => project.userId === ownerId(context),
-    tasks: (project: Project, _args: unknown, context: Context) =>
-      context.prisma.task.findMany({ where: { projectId: project.id, project: { userId: ownerId(context) } } }),
   },
-  Task: {
-    project: (task: Task, _args: unknown, context: Context) =>
-      context.prisma.project.findUniqueOrThrow({ where: { id: task.projectId, userId: ownerId(context) } }),
-  },
+  Task: taskResolvers,
 };

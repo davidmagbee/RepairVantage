@@ -7,10 +7,10 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 | Boundary | Current behavior and source |
 | --- | --- |
 | Runtime | React/Vite and Express/Apollo share one origin. Prisma 7 uses the PostgreSQL adapter for the application and a direct migration URL for the CLI. Production enforces TLS certificate and hostname verification. Vercel packaging builds a reviewed commit and keeps browser assets separate from server runtime code. [App routes](../client/src/App.tsx) · [Server setup](../server/README.md) · [Deployment](DEPLOYMENT.md) |
-| Identity | Better Auth resolves a verified principal through Google or email code. Workspace routes require a verified session. [Identity](../server/src/identity.mts) · [Private routes](../client/src/components/PrivateRoute.tsx) |
+| Identity | The approved authentication contract is Better Auth's verified cookie session through Google or an email code. Workspace routes require a verified session. [Identity](../server/src/identity.mts) · [Private routes](../client/src/components/PrivateRoute.tsx) |
 | Projects | Create projects with a name and optional description. Open owned and shared projects from anywhere on their cards. Owners can edit name, description, status, and priority. The API supports owner-scoped updates and deletion. [Project form](../client/src/pages/NewProject.tsx) · [Project list](../client/src/pages/ProjectList.tsx) · [Details](../client/src/pages/ProjectDetails.tsx) · [Resolvers](../server/src/graphql/resolvers/index.ts) |
 | Sharing | The owner copies an invitation link scoped to the recipient's verified email. Members can read shared details and comment. Owner controls include revocation, member removal, and Showcase publication. The Showcase projection contains its own title and summary, publication time, and current project status. [Sharing UI](../client/src/components/ProjectSharing.tsx) · [Sharing resolvers](../server/src/graphql/resolvers/sharing.ts) |
-| Reserved scope | Tasks have owner-scoped create and read operations. Parts, tools, dependencies, and calendar events have Prisma models. Workflow UI and the remaining API operations are future slices. [GraphQL schema](../server/src/graphql/schema/index.ts) · [Prisma schema](../server/prisma/schema.prisma) |
+| Tasks | The development branch adds owner-scoped CRUD, completion tracking, and a status board. Parts, tools, dependencies, and calendar events have Prisma models for later slices. [Task API](../server/src/graphql/schema/tasks.ts) · [Prisma schema](../server/prisma/schema.prisma) |
 
 ## Quality gate
 
@@ -37,9 +37,9 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 
 ## Tasks
 
-1. Expose the existing owner-only task read and create paths inside a project. Cover empty states, due-date validation, reload, and refusal of writes or reads from a different project owner. [Task API](../server/src/graphql/schema/index.ts) · [Task resolvers](../server/src/graphql/resolvers/index.ts)
-2. Add task edit and completion after defining allowed transitions and when completion time is stored. Test invalid transitions, stale updates, and direct ID and nested-query access.
-3. Confirm whether a task assignee must be a member and whether assignment grants task access. Add a board only when the underlying transitions work. Provide keyboard-accessible status changes alongside drag and drop.
+1. Open **Show tasks** on Project Details to list, create, edit, or delete owner tasks. Archived tasks are readable. Confirm permanent deletion of a task and its related links. [Task board](../client/src/components/ProjectTasks.tsx) · [Task API](../server/src/graphql/schema/tasks.ts)
+2. Move between any of the five defined statuses by dragging a card or editing its status with the keyboard. Entering Completed records the time, repeated completion preserves it, and reopening clears it. Leaving description or due date blank clears that field. [Task tests](../server/test/tasks.test.cjs)
+3. Assignment policy is approved. Owners assign current project members. Assignees can read and edit their own tasks while their membership is active.
 
 ## Parts and tools
 

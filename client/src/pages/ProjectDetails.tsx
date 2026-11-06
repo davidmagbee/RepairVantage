@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProjectSharing from '../components/ProjectSharing';
+import ProjectTasks from '../components/ProjectTasks';
 import { privateOperation } from '../graphql/client';
 import { ADD_PROJECT_COMMENT, ARCHIVE_PROJECT, RESTORE_PROJECT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
@@ -211,12 +212,14 @@ function ProjectComments({ project }: { project: ProjectWithComments }) {
 
 export default function ProjectDetails() {
   const { id } = useParams();
+  const [taskProjectId, setTaskProjectId] = useState<string>();
   const { data, loading, error, refetch } = useQuery<{ project: ProjectWithComments | null }>(GET_PROJECT_DETAILS, {
     context: privateOperation,
     variables: { id },
     fetchPolicy: 'network-only',
   });
   const project = data?.project;
+  const tasksExpanded = Boolean(project && taskProjectId === project.id);
 
   return (
     <div className="space-y-4">
@@ -258,6 +261,23 @@ export default function ProjectDetails() {
               {project.canManage && <ProjectArchiveControl key={project.id} project={project} />}
             </div>
           </article>
+          {project.canManage && (
+            <div className="space-y-3">
+              <button
+                className="btn btn-outline"
+                type="button"
+                aria-expanded={tasksExpanded}
+                aria-controls="project-tasks"
+                onClick={() => setTaskProjectId(tasksExpanded ? undefined : project.id)}
+              >
+                {tasksExpanded ? 'Hide tasks' : 'Show tasks'}
+              </button>
+              {/* Fetch the task board when an owner opens it. */}
+              <div id="project-tasks">
+                {tasksExpanded && <ProjectTasks key={project.id} projectId={project.id} readOnly={Boolean(project.archivedAt)} />}
+              </div>
+            </div>
+          )}
           <ProjectComments key={project.id} project={project} />
           {project.canManage && <ProjectSharing key={`sharing-${project.id}`} projectId={project.id} archived={Boolean(project.archivedAt)} />}
         </>
