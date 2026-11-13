@@ -12,7 +12,7 @@ Local acceptance passed 47 Node and 67 Chromium tests, with 99.07% V8 source lin
 
 Release smoke checks returned HTTP 200 for canonical `/`, `/health`, `/ready`, `/api/auth/providers`, and `/projects/schedule`. The canonical HTML asset `index-DXf-RjAI.js` matches the package. Signed-out GraphQL returned `UNAUTHENTICATED` without private data. A protected browser route redirected to sign-in with provider buttons visible. A release-time Vercel error-log query covering the preceding 15 minutes returned no matching entries; it does not prove zero errors.
 
-**Unverified:** production OTP delivery/sign-in, Google consent, account linking, and authenticated feature walkthroughs. Local OTP/API/PostgreSQL acceptance and signed-out hosted smoke checks do not establish those outcomes.
+**Owner-confirmed:** existing production OTP delivery/sign-in, Google consent, and account linking. The release comparison `2ce81ed → 935418c` showed no authentication implementation, provider configuration code, auth dependency, or identity-table changes; deployment did not change production provider settings. The owner confirmed these unchanged flows on 2026-11-13. New authenticated feature walkthroughs remain owner QA.
 
 The date editor preserves untouched endpoint seconds and lets owners clear endpoints. API create/date patches reject reversed ranges using effective stored plus changed values under the project lock. Members and archived projects cannot edit. The focused concurrency case accepted exactly one of two opposing endpoint patches and rejected the other, leaving an ordered range.
 

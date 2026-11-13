@@ -37,7 +37,7 @@ All seven checked-in migrations are applied. The pending archive, owner-inventor
 
 Release smoke checks returned HTTP 200 for `/`, `/health`, `/ready`, `/api/auth/providers`, and `/projects/schedule`. Canonical HTML references `index-DXf-RjAI.js`, matching the reviewed package. Signed-out GraphQL returned `UNAUTHENTICATED` without private data. A protected browser route redirected to sign-in; provider buttons were visible. A release-time Vercel error-log query covering the preceding 15 minutes returned no matching entries; this does not establish that no errors occurred.
 
-Local acceptance passed 47 Node and 67 Chromium tests, with 99.07% V8 source lines and 96.85% branches. Authenticated production OTP delivery/sign-in, Google consent, account linking, and feature walkthroughs remain unverified. Execute the release QA below with real accounts. Archive-aware rollback remains required once projects are archived.
+Local acceptance passed 47 Node and 67 Chromium tests, with 99.07% V8 source lines and 96.85% branches. The owner confirmed the unchanged production OTP delivery/sign-in, Google consent, and account-linking flows. Authentication implementation, provider configuration code, dependency versions, and identity tables did not change from `2ce81ed` to `935418c`; this deployment did not change production provider settings. New authenticated feature walkthroughs remain owner QA. Archive-aware rollback remains required once projects are archived.
 
 ## Release QA
 
