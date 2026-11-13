@@ -4,7 +4,7 @@ RepairVantage gives repair project owners a private workspace for tracking statu
 
 [Open RepairVantage](https://repairvantage.davidmagbee.com/)
 
-- **Owners** create projects, edit details, status, and priority, invite people, and manage Showcase links.
+- **Owners** create projects, edit details, status, priority, and UTC schedule dates, invite people, and manage Showcase links.
 - **Invited members** can read shared project details and add comments. Owners control access.
 - **Showcase visitors** see the separately published title, summary, and current status. Comments and internal fields stay in the workspace.
 

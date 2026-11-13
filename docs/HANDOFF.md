@@ -1,6 +1,16 @@
 # RepairVantage handoff
 
-## Current branch and release state
+## Project date continuation · 2026-11-13
+
+PR #1 merged after its checks passed. This slice adds an owner UTC date editor and API range validation. Optional endpoints can be cleared; untouched endpoints preserve seconds. The API checks effective stored plus changed values under the existing project lock. Members and archived projects cannot edit. No migration or hosted deployment occurred.
+
+Focused API test passed after reproducing a reversed-date create that previously persisted. Browser red reproduced the absent editor. Full implementation-tree acceptance passed: 47 Node tests, 67 Chromium tests, 99.07% V8 source lines and 96.85% branches (`coverage/run-yEZeaY/report/`, coverage gate exit 0). Client lint/build and server build passed. A subsequent focused concurrency case passed: opposing endpoint patches yield exactly one accepted write and one rejected range; final API read stays ordered. Independent review found no actionable defects. The committed candidate is rechecked before merge.
+
+Semantic commit: `feat(schedule): edit and validate project UTC dates`. Staging: `git add README.md client/README.md client/src/components/ProjectDates.tsx client/src/pages/ProjectDetails.tsx client/src/graphql/queries.ts client/src/graphql/mutations.ts client/tests/project-dates.spec.ts client/tests/report.full-stack.spec.ts server/README.md server/src/graphql/resolvers/index.ts server/test/project-dates.test.cjs server/package.json docs/IMPLEMENTATION.md docs/ROADMAP.md docs/HANDOFF.md`.
+
+Manual QA: owner → Edit dates → save UTC range → reload → Schedule calendar/timeline; clear an endpoint; reverse the range and verify rejection; retry a failed save; member/archived view shows dates without controls. Tests exercise owner and denied callers through GraphQL/PostgreSQL.
+
+## Previous continuation and release state
 
 Continue on `dev/report-export-demo`, created from `7924fc2` on `dev/engineering-harness`. The first continuation commit is `61c3a5d` (`feat(demo): import legacy projects for verified accounts`). Production application code remains on the release recorded in the [roadmap](ROADMAP.md); no hosted migrations or deployment ran in this continuation.
 
@@ -28,10 +38,10 @@ The reusable CLI requires explicit `DEMO_DATABASE_URL`, previews by default, and
 
 ## Resume order
 
-1. Inspect [draft PR #1](https://github.com/davidmagbee/RepairVantage/pull/1) into `dev/engineering-harness` and its hosted CI. Local candidate verification passed. The larger development-to-`main` release remains separate.
+1. PR #1 merged into `dev/engineering-harness` at `c8c9888` after CI passed. New date-editing work continues on `dev/report-export-demo`. The larger development-to-`main` release remains separate.
 2. Inspect hosted CI before promoting any application code. Apply archive, inventory, and expense migrations in order only as part of an authorized release. Use the [deployment runbook](DEPLOYMENT.md).
 3. Complete hosted Google consent, inbox delivery, and account-linking QA with real accounts. The loopback OTP sink proves only the local flow.
-4. Next product slice: expose existing project start/end dates in owner editing so Schedule can be populated through the UI. Settle date/time and range validation first. Dependency editing, independent calendar events, resource conflicts, report filtering, and broader UX remain follow-ups.
+4. Project date editing is now implemented in the continuation below. Next product decision: define the first task-dependency edge and completion/blocking semantics before implementing cycle-safe writes. Independent calendar events, resource conflicts, report filtering, and broader UX remain follow-ups.
 
 ## Manual QA
 
@@ -60,22 +70,22 @@ git commit -m 'test(reports): verify persisted exports and schedule boundaries'
 
 ### Change
 
-Add an opt-in, private legacy-project importer for existing verified accounts. Repair the report mock's Apollo fragment discriminator and verify persisted report exports through the real OTP/API/PostgreSQL workflow. Extend schedule privacy/range and expense-denial acceptance.
+Owners can edit optional UTC project start/end dates from Project Details and see the saved project in Schedule. Blank endpoints clear dates; untouched endpoints preserve seconds. Members and archived projects show dates without editing controls. API creation/date patches reject reversed ranges and validate stored plus changed values under the project lock.
 
 ### Verification
 
-Before: report CSV test timed out; the browser trace identified undefined fragment fields. After: focused report tests and real-API export flow pass. Candidate `3e1dda5` passed 46 Node and 64 Chromium tests with 99.20% source lines and 96.97% branches. Independent `dev-review` inspected the actual diff and new files; no actionable defects established. Hosted sign-in and browser demo acceptance remain manual.
+Red: missing editor and reversed API create reproduced. Green: 47 Node + 67 Chromium tests; 99.07% source lines and 96.85% branches; full local gate exit 0. Real OTP/API/PostgreSQL acceptance saves dates, opens the project from Schedule, and reopens the persisted editor before report export. Focused tests cover clearing, cancel, retry, denied callers, archive/restore, legacy ranges, and concurrent conflicting endpoint writes. Client lint/build and server build pass; independent review found no actionable defects. Hosted date-editor walkthrough remains manual.
 
 ### Documentation
 
-- [x] Completed the documentation checkpoint for this continuation.
+- [x] Documentation checkpoint completed.
 
-Updated README, server/client guidance, roadmap exception, demo instructions, and this handoff. Reviewed implementation/glossary/domain rules and deployment/engineering runbooks: no domain, schema, release, or deployment procedure changed. Corrected client deletion QA wording to match its confirmation dialog.
+Updated root/client/server READMEs, implementation guide, roadmap, and handoff. Reviewed glossary/domain conventions and engineering/deployment instructions; terminology, schema and release procedures stay unchanged. Corrected remaining deletion-confirmation wording in implementation guidance.
 
 ### Release and data impact
 
-No schema or authentication changes. Demo importer is never automatic. Five explicitly authorized private fixtures were inserted into the owner's hosted account; existing records preserved. Application deployment remains unchanged. Door: reversible code/tooling; inserted projects can be managed through owner UI. Blast radius: opt-in target account.
+No migration or deployment. Existing optional date fields reused. API now rejects newly reversed ranges; unrelated edits retain historical reversed ranges until dates change. Owner/archive authorization retained. Door: reversible application change. Blast radius: project date writes.
 
 ### Delta since previous push
 
-Documentation-only follow-up records the completed `3e1dda5` coverage run and draft PR #1. No behavior, schema, or release change since the initial push. Inherits development features from `7924fc2` without releasing them to production.
+Adds UTC project-date authoring and stored-range validation after PR #1 merged at `c8c9888`. Earlier seed/report work remains unchanged. New conventional commit: `feat(schedule): edit and validate project UTC dates`.

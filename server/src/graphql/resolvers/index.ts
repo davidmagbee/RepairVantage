@@ -31,6 +31,13 @@ function validateProject(input: ProjectUpdateInput) {
   if (input.status === null || input.priority === null) badInput('Status and priority cannot be null');
 }
 
+function validateProjectDates(startDate: ProjectInput['startDate'], endDate: ProjectInput['endDate']) {
+  // Partial schedules are valid; two endpoints must describe a forward or same-instant range.
+  if (startDate != null && endDate != null && new Date(startDate).getTime() > new Date(endDate).getTime()) {
+    badInput('Project end must be on or after its start');
+  }
+}
+
 function setProjectArchive(id: string, context: Context, archive: boolean) {
   const userId = ownerId(context);
   return context.prisma.$transaction(async prisma => {
@@ -110,6 +117,7 @@ export const resolvers = {
     createProject: (_parent: unknown, { input }: { input: ProjectInput }, context: Context) => {
       const userId = ownerId(context);
       validateProject(input);
+      validateProjectDates(input.startDate, input.endDate);
       return context.prisma.project.create({ data: { ...input, name: nameInput(input.name), userId } });
     },
     updateProject: (_parent: unknown, { id, input }: { id: string; input: ProjectUpdateInput }, context: Context) => {
@@ -117,6 +125,15 @@ export const resolvers = {
       validateProject(input);
       return context.prisma.$transaction(async prisma => {
         await requireActiveOwnedProject(prisma, id, userId);
+        if (input.startDate !== undefined || input.endDate !== undefined) {
+          // Read after the parent lock so concurrent endpoint patches cannot validate stale dates.
+          // Unrelated edits preserve historical reversed ranges until their dates are explicitly changed.
+          const current = await prisma.project.findUniqueOrThrow({ where: { id, userId }, select: { startDate: true, endDate: true } });
+          validateProjectDates(
+            input.startDate === undefined ? current.startDate : input.startDate,
+            input.endDate === undefined ? current.endDate : input.endDate,
+          );
+        }
         return prisma.project.update({
           where: { id, userId },
           data: { ...input, name: input.name === undefined ? undefined : nameInput(input.name) },

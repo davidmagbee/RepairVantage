@@ -53,3 +53,9 @@ Enter estimated and actual time in decimal hours on a task. Owners can open the 
 ## Inventory
 
 Open **Inventory** in workspace navigation to add or edit parts and tools and their on-hand counts. Select **Show requirements** on an owned project to set or remove an item quantity. Required quantities replace the previous value. The inventory forecast sums planned, in-progress, and on-hold projects that are active. Archived requirements remain readable.
+
+## Project schedule dates
+
+On active owned projects, select **Edit dates**. Enter optional **Project start (UTC)** and **Project end (UTC)** values. These times use UTC regardless of the browser timezone. **Save dates** updates only changed endpoints; clearing an endpoint removes it. The end cannot precede the start. Failed saves retain the draft; **Cancel** leaves stored dates intact. Members and archived projects show dates without editing controls.
+
+Open **Schedule** and choose a range containing the project dates to see the project in the calendar or timeline. Unchanged endpoints retain their original seconds even though the editor displays minutes.

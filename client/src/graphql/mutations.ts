@@ -39,6 +39,17 @@ export const UPDATE_PROJECT_DETAILS = gql`
   }
 `;
 
+// Keep date responses independent of the details, status, and priority editors' cache fields.
+export const UPDATE_PROJECT_DATES = gql`
+  mutation UpdateProjectDates($id: ID!, $input: ProjectUpdateInput!) {
+    updateProject(id: $id, input: $input) {
+      id
+      startDate
+      endDate
+    }
+  }
+`;
+
 export const ARCHIVE_PROJECT = gql`
   mutation ArchiveProject($id: ID!) {
     archiveProject(id: $id) { id archivedAt }

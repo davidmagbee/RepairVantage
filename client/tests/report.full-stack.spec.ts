@@ -25,6 +25,20 @@ test('an authenticated owner persists expenses and downloads matching report row
   await page.getByLabel('Project name').fill(projectName);
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(page.getByRole('heading', { name: projectName })).toBeVisible();
+  // Exercise UTC date authoring through the real API before checking its Schedule projection.
+  await page.getByRole('button', { name: 'Edit dates', exact: true }).click();
+  await page.getByLabel('Project start (UTC)').fill('2026-11-14T09:15');
+  await page.getByLabel('Project end (UTC)').fill('2026-11-16T17:00');
+  await page.getByRole('button', { name: 'Save dates' }).click();
+  await expect(page.getByRole('button', { name: 'Edit dates', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Schedule', exact: true }).click();
+  await page.getByLabel('From date').fill('2026-11-14');
+  await page.getByLabel('Through date').fill('2026-11-16');
+  await page.getByRole('button', { name: 'Apply range' }).click();
+  await page.getByRole('list', { name: 'Calendar dates' }).getByRole('link', { name: projectName, exact: true }).click();
+  await page.getByRole('button', { name: 'Edit dates', exact: true }).click();
+  await expect(page.getByLabel('Project start (UTC)')).toHaveValue('2026-11-14T09:15');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.getByRole('link', { name: 'Project report', exact: true }).click();
   await expect(page.getByRole('heading', { name: `${projectName} report` })).toBeVisible();
 
