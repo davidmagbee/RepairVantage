@@ -15,3 +15,10 @@ The original screenshot's activity feed and numbers were prototype fixtures. The
 Use the disposable PostgreSQL and browser commands in [Engineering](ENGINEERING.md). Dashboard API tests exercise ownership, shared-reader exclusion, archive filtering, terminal-project/task exclusion, date windows, and stable ordering. Browser tests exercise metrics, links, retry/empty states, project filters, current navigation, and narrow layouts. Desktop/mobile screenshots were inspected against the reference. The full local run passed 48 Node and 71 Chromium tests, with 99.03% source lines and 96.82% branches (`coverage/run-hZPyCD/report/`). A valid-long-name mobile overflow was reproduced, fixed, and covered by a permanent regression.
 
 This UI restoration is separate from the deployed feature release `935418c`. The owner is reviewing new feature behavior on that release. Authentication implementation and production provider settings were unchanged by the feature release; the owner confirmed existing OTP, Google consent, and linking. New UI code does not change those flows.
+
+## Review captures
+
+These captures use synthetic local test responses and show the implemented design, not the owner's production account. No production data or credentials appear in them.
+
+- [Desktop dashboard](design/dashboard-desktop.png)
+- [Mobile dashboard](design/dashboard-mobile.png)
