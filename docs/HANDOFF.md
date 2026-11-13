@@ -18,7 +18,7 @@ The trace showed `csvText` receiving an undefined expense description. The inter
 
 The real-API [report acceptance test](../client/tests/report.full-stack.spec.ts) signs in through the loopback OTP sink, persists two expenses, reloads, reconciles the USD total and CSV rows, verifies formula/quote escaping and print invocation, then deletes its disposable project. API tests cover schedule date ranges, task-only schedules, stale assignee privacy, owner isolation, and rejected expense writes.
 
-The latest full run before the final API-test additions passed 46 Node tests and 64 Chromium tests, with 99.01% V8 source lines and 96.09% branches. Local report: `coverage/run-hv0ItJ/report/`. Client lint/build and server build passed. The added schedule/report API cases passed their focused PostgreSQL run. Final full verification of the committed candidate is next; record its revision, exit code, and report here before publishing. The strict 100% line target remains open.
+The committed candidate `3e1dda5` passed `node scripts/coverage.mjs --minimum-lines=99` (exit 0): 46 Node tests and 64 Chromium tests, with 99.20% V8 source lines and 96.97% branches. Local report: `coverage/run-7Kq42N/report/`. Client lint/build and server build passed. The schedule/report API cases also passed their focused PostgreSQL run. The strict 100% line target remains open. The subsequent evidence commit changes documentation only.
 
 ## Demonstration data
 
@@ -28,7 +28,7 @@ The reusable CLI requires explicit `DEMO_DATABASE_URL`, previews by default, and
 
 ## Resume order
 
-1. Complete the final committed-candidate coverage run and update this evidence. Open a draft PR into `dev/engineering-harness` for the continuation; PR events trigger CI. The larger development-to-`main` release remains separate.
+1. Inspect [draft PR #1](https://github.com/davidmagbee/RepairVantage/pull/1) into `dev/engineering-harness` and its hosted CI. Local candidate verification passed. The larger development-to-`main` release remains separate.
 2. Inspect hosted CI before promoting any application code. Apply archive, inventory, and expense migrations in order only as part of an authorized release. Use the [deployment runbook](DEPLOYMENT.md).
 3. Complete hosted Google consent, inbox delivery, and account-linking QA with real accounts. The loopback OTP sink proves only the local flow.
 4. Next product slice: expose existing project start/end dates in owner editing so Schedule can be populated through the UI. Settle date/time and range validation first. Dependency editing, independent calendar events, resource conflicts, report filtering, and broader UX remain follow-ups.
@@ -64,7 +64,7 @@ Add an opt-in, private legacy-project importer for existing verified accounts. R
 
 ### Verification
 
-Before: report CSV test timed out; the browser trace identified undefined fragment fields. After: focused report tests and real-API export flow pass. Final committed-candidate full-run evidence is recorded above. Independent `dev-review` inspected the actual diff and new files; no actionable defects established. Hosted sign-in and browser demo acceptance remain manual.
+Before: report CSV test timed out; the browser trace identified undefined fragment fields. After: focused report tests and real-API export flow pass. Candidate `3e1dda5` passed 46 Node and 64 Chromium tests with 99.20% source lines and 96.97% branches. Independent `dev-review` inspected the actual diff and new files; no actionable defects established. Hosted sign-in and browser demo acceptance remain manual.
 
 ### Documentation
 
@@ -78,4 +78,4 @@ No schema or authentication changes. Demo importer is never automatic. Five expl
 
 ### Delta since previous push
 
-Initial continuation push; no subsequent delta yet. Inherits development features from `7924fc2` without releasing them to production.
+Documentation-only follow-up records the completed `3e1dda5` coverage run and draft PR #1. No behavior, schema, or release change since the initial push. Inherits development features from `7924fc2` without releasing them to production.
