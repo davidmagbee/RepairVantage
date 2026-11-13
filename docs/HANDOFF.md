@@ -1,5 +1,22 @@
 # RepairVantage handoff
 
+## UI restoration continuation
+
+Branch `dev/portfolio-ui` starts from the documented feature release. `ea11f30` records the owner's confirmation of unchanged OTP, Google consent, and linking; no auth implementation or production provider setting changed in the feature release. The owner is reviewing new feature behavior on production.
+
+The UI work restores the [portfolio reference](UI-REFERENCE.md): indigo workspace navigation, a real-data `/projects/dashboard`, three summary cards, deadline/update panels, status breakdown, project-card hierarchy, search/status filters, and consistent form/table/panel styling. Existing project and sign-in destinations stay unchanged. Active metrics reuse inventory's three unfinished statuses; archived/shared projects do not enter owner totals. No fixtures or fake activity enter production code.
+
+Final local acceptance passed 48 Node and 71 Chromium tests with 99.03% source lines and 96.82% branches (`coverage/run-hZPyCD/report/`, gate exit 0). Lint/build passed. Manual CUA review signed into the disposable local app, opened project cards and dashboard, and observed real fixture-backed metrics. Separate local-fixture desktop/mobile screenshots are in ignored `coverage/ui-review/`. Independent review found a valid-long-name mobile overflow; CSS grid/flex minimum constraints and text wrapping fixed it, and a permanent browser regression passed. The complete suite includes the long-name regression and passed after the fix. UI is not deployed.
+
+Conventional UI commit: `feat(ui): restore portfolio dashboard and workspace design`.
+
+Staging group: `git add README.md client/README.md client/src/App.tsx client/src/components/Layout.tsx client/src/pages/Dashboard.tsx client/src/pages/ProjectList.tsx client/src/graphql/dashboard.ts client/src/index.css client/tests/dashboard.spec.ts client/tests/project-cards.spec.ts server/README.md server/src/graphql/resolvers/index.ts server/test/dashboard.test.cjs server/package.json docs/HANDOFF.md docs/ROADMAP.md docs/IMPLEMENTATION.md docs/UI-REFERENCE.md docs/design/portfolio-dashboard.png`.
+
+Manual UI QA: open Dashboard; reconcile three cards with status counts; open deadline and update links; test empty/retry states; switch Dashboard/Projects/Inventory/Schedule; search/filter/clear owned/shared cards; use keyboard card navigation; inspect phone widths and long names. Existing feature QA below remains owner review.
+
+PR body/delta: restore portfolio-reference UI and truthful owner metrics; document unchanged, owner-confirmed auth; include final lint/build/API/browser/coverage evidence and independent review. No migration or production deployment. The release source below stays live until UI acceptance.
+
+
 ## Current release · 2026-11-13
 
 Production source: [`935418c7916aea7e9f9405394d4e6f9af02d968c`](https://github.com/davidmagbee/RepairVantage/commit/935418c7916aea7e9f9405394d4e6f9af02d968c), merged through [PR #2](https://github.com/davidmagbee/RepairVantage/pull/2). Its source tree matches tested candidate `5c03396`; [CI run `43481430708`](https://github.com/davidmagbee/RepairVantage/actions/runs/43481430708) passed. Deployment [`dpl_BovbvZrLoDipVbNVqmrLo7ouBj2A`](https://vercel.com/davidmagbees-projects/repairvantage/BovbvZrLoDipVbNVqmrLo7ouBj2A) is promoted at [RepairVantage](https://repairvantage.davidmagbee.com). [Release evidence](DEPLOYMENT.md#release-2026-11-13).
@@ -32,7 +49,7 @@ The CLI requires explicit `DEMO_DATABASE_URL`, previews by default, and needs `-
 
 ## Manual QA
 
-1. Complete emailed OTP sign-in and Google consent; verify logout. Test both providers with the same verified address before claiming account linking. Confirm demonstration fixtures are visible only to their owner.
+1. Existing OTP, Google consent, and account linking are owner-confirmed for the unchanged auth implementation. Sign in normally to review new features and confirm demonstration fixtures are visible only to their owner. Repeat provider QA when authentication or provider settings change.
 2. Owner → Edit dates → save UTC range → reload → Schedule calendar/timeline. Clear an endpoint; reject reversed dates; retry a failed save. Member/archived views must show dates without controls.
 3. On a disposable project, record USD expenses `12.34` and `0.66`; reload → total `13.00`. Download CSV → matching rows/total; test a description beginning `=`. Print → Save as PDF.
 4. Archive/restore a disposable project; verify shared reads, revocation, denied writes, and restored editing. Cancel permanent deletion before confirming it on disposable data.

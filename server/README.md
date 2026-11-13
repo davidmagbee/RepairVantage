@@ -59,4 +59,5 @@ Production source `935418c7916aea7e9f9405394d4e6f9af02d968c` was promoted on 202
 - A Showcase URL exposes its explicit title, summary, publication time, and current project status to anyone with the link. Showcase links are unlisted. Unpublishing revokes the link, and republishing creates a new one.
 - Catalog items and project inventory requirements are owner-only. Archived projects retain readable requirements. Planned, in-progress, and on-hold projects contribute to shortfalls while unarchived.
 - Project creation and date updates reject an end before the effective start. Partial and cleared schedules are allowed. Date patches validate against stored endpoints under the project lock; unrelated edits preserve legacy reversed dates.
+- Dashboard totals and recent updates include only owned, unarchived projects. Upcoming task deadlines additionally exclude completed/cancelled parents and completed tasks. Shared readers cannot include another owner's projects in dashboard totals.
 - Schedule views and USD expense reports are owner-only. Archived projects retain readable reports. Task hours follow task edit authorization.

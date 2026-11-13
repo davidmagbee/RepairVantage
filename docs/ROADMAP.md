@@ -16,6 +16,8 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. The 
 
 **Release verification** · The local acceptance run passed 47 Node and 67 Chromium tests, with 99.07% V8 source lines and 96.85% branches. [CI run `43481430708`](https://github.com/davidmagbee/RepairVantage/actions/runs/43481430708) passed for the tested tree `5c03396`; the promoted merge commit has the same tree. The strict 100% line target remains open. [Coverage commands](ENGINEERING.md#application-coverage) · [Current handoff](HANDOFF.md)
 
+**UI restoration · In review** · `dev/portfolio-ui` restores the owner-supplied portfolio screenshot's dashboard, indigo workspace shell, colored summary cards, and project-card hierarchy. Metrics use real owner data; search/status filters preserve separate owned/shared lists. Production remains on `935418c` while new features are reviewed. [Design reference](UI-REFERENCE.md)
+
 ## Delivery order
 
 | Phase | Scope | Exit |
