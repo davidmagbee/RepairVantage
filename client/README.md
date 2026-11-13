@@ -38,13 +38,15 @@ Production hosting must route API requests to Express and serve the React entry 
 
 Owners can archive or restore a project from its details page. An Archived badge appears on its card. Members can still read details and comments. The owner can revoke invitations, remove members, or unpublish Showcase while the project is archived.
 
-To permanently delete an active project, select **Delete project permanently** and confirm its name in the prompt. Deletion removes related work and sharing. Restore an archived project before deleting it.
+To permanently delete an active project, select **Delete project permanently** and accept the confirmation naming the project. Deletion removes related work and sharing. Restore an archived project before deleting it.
 
 ## Project tasks
 
 On Project Details, select **Show tasks**. Owners see all project tasks and can add, edit, delete, and assign them to existing project members. Choose **Unassigned** to clear an assignment. Members see only tasks assigned to them and can edit those tasks on active projects. To change status, drag a task to a column or open **Edit** and select a status with the keyboard or touch. The task deadline field uses your browser’s local time. The board is read-only while the project is archived.
 
 ## Project reports
+
+The real-API acceptance test covers email-code sign-in, expense persistence after reload, matching CSV totals and rows, spreadsheet formula protection, and print invocation. With the disposable browser-test server running, use `REAL_API=1 npm test -- tests/report.full-stack.spec.ts`.
 
 Enter estimated and actual time in decimal hours on a task. Owners can open the project report to see both time totals and record actual expenses in USD. Use **Download CSV** for spreadsheet data or **Print / Save as PDF**, then select your browser’s **Save as PDF** destination. Archived project reports remain readable.
 

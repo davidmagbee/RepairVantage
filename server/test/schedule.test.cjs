@@ -63,4 +63,51 @@ test('schedule returns only owned dated work, with allowed assignees and project
   assert.deepEqual((await read(member)).data.schedule, []);
   assert.equal((await read(null)).errors[0].extensions.code, 'UNAUTHENTICATED');
   assert.equal((await read(owner, date('05'), date('02'))).errors[0].extensions.code, 'BAD_USER_INPUT');
+
+  // Persist legacy date combinations to exercise the public schedule contract against PostgreSQL.
+  const undated = await prisma.project.create({ data: {
+    userId: owner.id, name: 'Task-only dates',
+    members: { create: { userId: member.id } },
+  } });
+  const [startOnly, endOnly, reversed, outside] = await Promise.all([
+    prisma.project.create({ data: { userId: owner.id, name: 'Start only', startDate: date('02') } }),
+    prisma.project.create({ data: { userId: owner.id, name: 'End only', endDate: date('04') } }),
+    prisma.project.create({ data: { userId: owner.id, name: 'Legacy reversed', startDate: date('04'), endDate: date('02') } }),
+    prisma.project.create({ data: { userId: owner.id, name: 'Earlier project', startDate: date('01'), endDate: date('01') } }),
+  ]);
+  const unverified = await account('Unverified');
+  await prisma.user.update({ where: { id: unverified.id }, data: { emailVerified: false } });
+  await prisma.projectMember.create({ data: { projectId: undated.id, userId: unverified.id } });
+  const taskCases = await Promise.all([
+    prisma.task.create({ data: { projectId: undated.id, name: 'Task starts only', startDate: date('02') } }),
+    prisma.task.create({ data: { projectId: undated.id, name: 'Task reversed dates', startDate: date('04'), dueDate: date('02') } }),
+    prisma.task.create({ data: { projectId: undated.id, name: 'Legacy owner assignment', dueDate: date('03'), userId: owner.id } }),
+    prisma.task.create({ data: { projectId: undated.id, name: 'Stale assignment', dueDate: date('03'), userId: outsider.id } }),
+    prisma.task.create({ data: { projectId: undated.id, name: 'Unverified assignment', dueDate: date('03'), userId: unverified.id } }),
+    prisma.task.create({ data: { projectId: outside.id, name: 'Task after project', dueDate: date('03') } }),
+  ]);
+  const expanded = await read(owner);
+  assert.equal(expanded.errors, undefined, JSON.stringify(expanded.errors));
+  const byId = new Map(expanded.data.schedule.map(entry => [entry.id, entry]));
+  assert.equal(byId.has(undated.id), false);
+  assert.equal(byId.has(outside.id), false);
+  assert.equal(byId.get(startOnly.id).startAt, date('02').toISOString());
+  assert.equal(byId.get(startOnly.id).endAt, date('02').toISOString());
+  assert.equal(byId.get(endOnly.id).startAt, date('04').toISOString());
+  assert.equal(byId.get(endOnly.id).endAt, date('04').toISOString());
+  for (const id of [reversed.id, taskCases[1].id]) {
+    assert.equal(byId.get(id).startAt, date('02').toISOString());
+    assert.equal(byId.get(id).endAt, date('04').toISOString());
+  }
+  for (const item of taskCases) {
+    assert.equal(byId.get(item.id).kind, 'TASK');
+    assert.equal(byId.get(item.id).assigneeName, null);
+  }
+  const tied = expanded.data.schedule.filter(entry => entry.startAt === date('03').toISOString()).map(entry => entry.id);
+  assert.deepEqual(tied, [...tied].sort());
+  assert.equal((await read(outsider)).data.schedule.length, 1);
+  const limit = new Date(date('02').getTime() + 93 * 86_400_000);
+  assert.equal((await read(owner, date('02'), limit)).errors, undefined);
+  assert.equal((await read(owner, date('02'), new Date(limit.getTime() + 1))).errors[0].extensions.code, 'BAD_USER_INPUT');
+  assert.equal((await read(owner, date('02'), date('02'))).errors[0].extensions.code, 'BAD_USER_INPUT');
 });

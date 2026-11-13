@@ -42,6 +42,8 @@ Set `RV_TEST_DATABASE_URL` to a PostgreSQL database on loopback whose name ends 
 
 ## Release
 
+For an explicitly authorized demonstration account, use the [opt-in legacy project importer](../docs/DEMO.md). It requires `DEMO_DATABASE_URL` and an existing verified email, previews by default, and preserves authentication records and existing project edits. It never runs as part of a release or migration.
+
 Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefix server run prisma:deploy` as a release step. Prisma 7 loads [`prisma.config.ts`](prisma.config.ts) for CLI commands. Client generation and builds run without database credentials. The start command requires a successful build and available schema. `GET /health` checks liveness. `GET /ready` checks the application and database before routing traffic. See the [release runbook](../docs/DEPLOYMENT.md) for the deployment target and smoke checks.
 
 ## Access policy

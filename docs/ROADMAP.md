@@ -2,7 +2,7 @@
 
 The [original Cursor plan](../.cursorrules) supplies the feature inventory. The [implementation guide](IMPLEMENTATION.md) maps it to the current stack and defines acceptance checks.
 
-**Decision** · Use owner-entered repair projects for the live portfolio. Keep fixtures and test accounts in isolated development and test environments.
+**Decision** · Use owner-entered repair projects for the live portfolio. Keep fixtures and test accounts in isolated development and test environments. The account owner explicitly authorized a narrow exception for importing the five original mock projects into their own demonstration account. The [opt-in importer](DEMO.md) preserves privacy, existing records, and authentication.
 
 ## Where we are
 
@@ -15,6 +15,8 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. The 
 **Hosted sign-in QA** · Readiness passed and provider discovery reports Google and email codes enabled. Google consent and inbox delivery still need real-account checks. [Readiness](https://repairvantage.davidmagbee.com/ready) · [Providers](https://repairvantage.davidmagbee.com/api/auth/providers) · [Release QA](DEPLOYMENT.md#release-qa)
 
 **Release coverage** · The local suite for `2ce81ed` measured 99.58% V8 lines and 97.65% branches. The 99% CI floor passed locally. The strict 100% line target remains open. [Coverage commands](ENGINEERING.md#application-coverage)
+
+**Continuation verification** · Candidate `3e1dda5` on `dev/report-export-demo` passed 46 Node and 64 Chromium tests locally, including persisted CSV export through OTP/API/PostgreSQL. Coverage measured 99.20% V8 source lines and 96.97% branches. [Draft PR #1](https://github.com/davidmagbee/RepairVantage/pull/1) targets the development branch; production application code remains unchanged. [Current handoff](HANDOFF.md)
 
 ## Delivery order
 

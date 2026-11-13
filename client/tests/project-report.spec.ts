@@ -2,7 +2,7 @@ import { expect, test } from './fixtures';
 
 test('an owner records USD expenses and exports the same totals shown in the report', async ({ page }) => {
   const user = { id: 'owner', name: 'Owner', email: 'owner@example.test', emailVerified: true };
-  const expenses: { id: string; description: string; amountCents: number; createdAt: string }[] = [];
+  const expenses: { __typename: 'ProjectExpense'; id: string; description: string; amountCents: number; createdAt: string }[] = [];
   let rejectExpense = true;
   await page.route('**/api/auth/get-session', route => route.fulfill({ json: { user, session: { id: 's', userId: user.id } } }));
   await page.route('**/graphql', route => {
@@ -19,7 +19,8 @@ test('an owner records USD expenses and exports the same totals shown in the rep
       rejectExpense = false;
       return route.fulfill({ json: { errors: [{ message: 'Expense write failed' }] } });
     }
-    const expense = { id: 'expense', ...variables, createdAt: '2026-11-06T12:00:00.000Z' };
+    // Apollo uses the type discriminator to read the ProjectExpenseFields fragment.
+    const expense = { __typename: 'ProjectExpense' as const, id: 'expense', ...variables, createdAt: '2026-11-06T12:00:00.000Z' };
     expenses.push(expense);
     return route.fulfill({ json: { data: { addProjectExpense: expense } } });
   });
@@ -39,6 +40,10 @@ test('an owner records USD expenses and exports the same totals shown in the rep
   await expect(amount).toHaveValue('12.34');
   await submit.click();
   await expect(page.getByText('$12.34').first()).toBeVisible();
+  // Check the fragment-backed row before export so malformed fixtures fail at the data boundary.
+  const expenseRow = page.getByRole('row').filter({ has: page.getByRole('cell', { name: '=SUM(1,2)', exact: true }) });
+  await expect(expenseRow.getByRole('cell', { name: '$12.34', exact: true })).toBeVisible();
+  await expect(expenseRow.locator('time')).toHaveAttribute('datetime', '2026-11-06T12:00:00.000Z');
   const downloadEvent = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download CSV' }).click();
   const download = await downloadEvent;
