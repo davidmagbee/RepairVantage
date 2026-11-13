@@ -2,7 +2,7 @@
 
 The [original Cursor plan](../.cursorrules) supplies the feature inventory. The [implementation guide](IMPLEMENTATION.md) maps it to the current stack and defines acceptance checks.
 
-**Decision** · Use owner-entered repair projects for the live portfolio. Keep fixtures and test accounts in isolated development and test environments.
+**Decision** · Use owner-entered repair projects for the live portfolio. Keep fixtures and test accounts in isolated development and test environments. The account owner explicitly authorized a narrow exception for importing the five original mock projects into their own demonstration account. The [opt-in importer](DEMO.md) preserves privacy, existing records, and authentication.
 
 ## Where we are
 

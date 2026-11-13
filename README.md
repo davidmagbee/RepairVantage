@@ -37,4 +37,5 @@ Open `http://localhost:5173`. The dev server proxies GraphQL and authentication 
 
 - [Engineering runbook and verification](docs/ENGINEERING.md)
 - [Deployment and release gates](docs/DEPLOYMENT.md)
+- [Opt-in demonstration projects](docs/DEMO.md)
 - [Project skill installation and provenance](docs/agents/SKILLS.md)
