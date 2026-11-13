@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProjectSharing from '../components/ProjectSharing';
 import ProjectTasks from '../components/ProjectTasks';
 import ProjectRequirements from '../components/ProjectRequirements';
+import ProjectDates from '../components/ProjectDates';
 import { privateOperation } from '../graphql/client';
 import { ADD_PROJECT_COMMENT, ARCHIVE_PROJECT, DELETE_PROJECT, RESTORE_PROJECT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
@@ -277,6 +278,7 @@ export default function ProjectDetails() {
                 </div>
               </dl>
               {project.description && <p className="whitespace-pre-wrap break-words">{project.description}</p>}
+              <ProjectDates key={`dates-${project.id}`} project={project} />
               {project.archivedAt && <p role="status">This project is archived and read-only.</p>}
               {project.canManage && !project.archivedAt && (
                 <>

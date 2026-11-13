@@ -39,6 +39,8 @@ export const GET_PROJECT_DETAILS = gql`
     project(id: $id) {
       ...ProjectFields
       archivedAt
+      startDate
+      endDate
       comments {
         ...CommentFields
       }
@@ -56,6 +58,8 @@ export interface Project {
   priority: string;
   canManage: boolean;
   archivedAt: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 export interface ProjectComment {

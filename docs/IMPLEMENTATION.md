@@ -34,7 +34,7 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 - Enforce the read-only rule at the API boundary for edits, new tasks, comments, publications, and invitations. Serialize archival with concurrent writes to the project and its child records. Exercise both write orderings on PostgreSQL.
 - Honor valid invitations issued before archival. Invitees join with read-only access until restore. Owners can still revoke invitations, remove members, and unpublish Showcase while archived.
 - Test the exceptions with the project archived. Verify that revoked or expired invitations still fail, and that member removal and unpublishing end access.
-- Owners can permanently delete an active project after confirming its name in the prompt. Restore an archived project before deleting it. Verify cancel and failed writes leave the project intact. [Deletion test](../client/tests/project-delete.spec.ts)
+- Owners can permanently delete an active project after accepting the confirmation naming the project. Restore an archived project before deleting it. Verify cancel and failed writes leave the project intact. [Deletion test](../client/tests/project-delete.spec.ts)
 
 ## Tasks
 
@@ -51,7 +51,7 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. Its 
 ## Dependencies and scheduling
 
 1. Define which task, part, and tool prerequisite edges are valid and when a prerequisite blocks work. Implement one edge type first. Reject self-links, forbidden cross-project links, and cycles, including conflicting concurrent writes. [Current dependency and event models](../server/prisma/schema.prisma)
-2. Open **Schedule** for an owner-scoped UTC calendar and timeline over existing project dates and task deadlines. It shows assigned members and required project tools. Set a task deadline to add it to the view. Authoring project dates and calendar events, and enforcing allocations, are separate slices.
+2. Open **Schedule** for an owner-scoped UTC calendar and timeline over existing project dates and task deadlines. It shows assigned members and required project tools. Set a task deadline to add it to the view. Owners can author optional UTC project start/end dates through **Edit dates**, including clearing endpoints. Date writes reject reversed ranges using stored plus changed endpoints under the project lock. Unchanged endpoints retain seconds. Calendar event authoring and allocation enforcement remain separate slices.
 3. Add the Gantt view after date and dependency semantics settle. Verify display and editing against the same stored dates and prerequisites.
 
 ## Reporting, export, and documentation
