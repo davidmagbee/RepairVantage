@@ -62,6 +62,7 @@ test('PostgreSQL reports reconcile owner-only USD expenses and assigned task hou
     await rejects(expense, { id, description: 'Denied expense', cents: 200 }, user, 'NOT_FOUND');
   }
   await rejects(report, { id }, null, 'UNAUTHENTICATED');
+  await rejects(expense, { id, description: 'Signed-out expense', cents: 100 }, null, 'UNAUTHENTICATED');
   await rejects(editHours, { id: assigned.id, input: { actualHours: -1 } }, member, 'BAD_USER_INPUT');
   const hours = await data(editHours, { id: assigned.id, input: { estimatedHours: 2.5, actualHours: 3.25 } }, member);
   assert.deepEqual({ ...hours.updateTask }, { estimatedHours: 2.5, actualHours: 3.25 });
@@ -72,6 +73,11 @@ test('PostgreSQL reports reconcile owner-only USD expenses and assigned task hou
   await data(editHours, { id: extra.id, input: { actualHours: null } }, owner);
   await rejects(expense, { id, description: ' ', cents: 10 }, owner, 'BAD_USER_INPUT');
   await rejects(expense, { id, description: 'Zero', cents: 0 }, owner, 'BAD_USER_INPUT');
+  // GraphQL must reject malformed monetary inputs before a write can reach persistence.
+  await rejects(expense, { id, description: 'x'.repeat(121), cents: 100 }, owner, 'BAD_USER_INPUT');
+  await rejects(expense, { id, description: 'Fractional cents', cents: 1.5 }, owner, 'BAD_USER_INPUT');
+  await rejects(expense, { id, description: 'Outside GraphQL Int', cents: 2147483648 }, owner, 'BAD_USER_INPUT');
+  assert.equal(await prisma.projectExpense.count({ where: { projectId: id } }), 0);
   for (const [description, cents] of [['  Part  ', 2147483647], ['Tax', 25]]) {
     const { addProjectExpense } = await data(expense, { id, description, cents }, owner);
     assert.equal(addProjectExpense.description, description.trim());
