@@ -46,6 +46,8 @@ For an explicitly authorized demonstration account, use the [opt-in legacy proje
 
 Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefix server run prisma:deploy` as a release step. Prisma 7 loads [`prisma.config.ts`](prisma.config.ts) for CLI commands. Client generation and builds run without database credentials. The start command requires a successful build and available schema. `GET /health` checks liveness. `GET /ready` checks the application and database before routing traffic. See the [release runbook](../docs/DEPLOYMENT.md) for the deployment target and smoke checks.
 
+Production source `935418c7916aea7e9f9405394d4e6f9af02d968c` was promoted on 2026-11-13 with all seven migrations applied. Archive, owner-inventory, and expense migrations ran through the verified-TLS direct owner connection; runtime expense DML grants and owner default privileges were verified. [Release evidence and remaining authenticated QA](../docs/DEPLOYMENT.md#release-2026-11-13). Roll back only to an archive-aware application once archived projects exist.
+
 ## Access policy
 
 - GraphQL accepts JSON POST from the configured origin. A verified session is required for workspace operations.
@@ -57,4 +59,5 @@ Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefi
 - A Showcase URL exposes its explicit title, summary, publication time, and current project status to anyone with the link. Showcase links are unlisted. Unpublishing revokes the link, and republishing creates a new one.
 - Catalog items and project inventory requirements are owner-only. Archived projects retain readable requirements. Planned, in-progress, and on-hold projects contribute to shortfalls while unarchived.
 - Project creation and date updates reject an end before the effective start. Partial and cleared schedules are allowed. Date patches validate against stored endpoints under the project lock; unrelated edits preserve legacy reversed dates.
+- Dashboard totals and recent updates include only owned, unarchived projects. Upcoming task deadlines additionally exclude completed/cancelled parents and completed tasks. Shared readers cannot include another owner's projects in dashboard totals.
 - Schedule views and USD expense reports are owner-only. Archived projects retain readable reports. Task hours follow task edit authorization.
