@@ -2,7 +2,11 @@
 
 The owner identified the RepairVantage image in their portfolio as the intended visual baseline. The checked-in [reference screenshot](design/portfolio-dashboard.png) is the original prototype capture from `portfolio-modern/public/projects/repairvantage.png`; it is a design reference, not current application data.
 
-## Restoration branch
+## Merge and release state
+
+[PR #3](https://github.com/davidmagbee/RepairVantage/pull/3) merged into `dev/engineering-harness` at `5d46f84` on 2026-11-18. Source tree equals UI tip `039ae0b`, whose Verify check passed. The public deployment was rechecked and still resolves to the prior `935418c` feature release. Merge is not deployment.
+
+## Restoration scope
 
 `dev/portfolio-ui` restores the indigo workspace navigation, three colored summary cards, completion progress, two-column overview panels, status breakdown, and a wider light workspace. Project cards regain status colors and clear hierarchy, with search and status filters. Existing details, tasks, inventory, schedule, and reports use the shared form, table, panel, and button styling.
 

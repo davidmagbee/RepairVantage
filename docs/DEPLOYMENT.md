@@ -39,6 +39,10 @@ Release smoke checks returned HTTP 200 for `/`, `/health`, `/ready`, `/api/auth/
 
 Local acceptance passed 47 Node and 67 Chromium tests, with 99.07% V8 source lines and 96.85% branches. The owner confirmed the unchanged production OTP delivery/sign-in, Google consent, and account-linking flows. Authentication implementation, provider configuration code, dependency versions, and identity tables did not change from `2ce81ed` to `935418c`; this deployment did not change production provider settings. New authenticated feature walkthroughs remain owner QA. Archive-aware rollback remains required once projects are archived.
 
+## Source-state recheck · 2026-11-18
+
+PR #3 merged the portfolio UI into `dev/engineering-harness` at `5d46f84`; no UI deployment was performed in this handoff task. Read-only provider inspection still resolved the canonical domain to `dpl_BovbvZrLoDipVbNVqmrLo7ouBj2A` and the public client loaded `index-DXf-RjAI.js`, matching the recorded `935418c` release. The Vercel project reported no Git connection, and repository Verify contains no deployment step. External automation was not comprehensively ruled out; recheck before the [main consolidation](BRANCH-CONSOLIDATION.md). Release the reviewed UI source separately using the package-and-release procedure; a branch merge does not apply hosted migrations or promote a deployment.
+
 ## Release QA
 
 - Request `/`, `/health`, and `/ready`. Open and refresh a nested client route. Confirm GraphQL and auth paths receive API responses.

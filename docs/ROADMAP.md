@@ -16,7 +16,13 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. The 
 
 **Release verification** · The local acceptance run passed 47 Node and 67 Chromium tests, with 99.07% V8 source lines and 96.85% branches. [CI run `43481430708`](https://github.com/davidmagbee/RepairVantage/actions/runs/43481430708) passed for the tested tree `5c03396`; the promoted merge commit has the same tree. The strict 100% line target remains open. [Coverage commands](ENGINEERING.md#application-coverage) · [Current handoff](HANDOFF.md)
 
-**UI restoration · In review** · `dev/portfolio-ui` restores the owner-supplied portfolio screenshot's dashboard, indigo workspace shell, colored summary cards, and project-card hierarchy. Metrics use real owner data; search/status filters preserve separate owned/shared lists. Production remains on `935418c` while new features are reviewed. [Design reference](UI-REFERENCE.md)
+**UI restoration · Merged, not deployed** · [PR #3](https://github.com/davidmagbee/RepairVantage/pull/3) merged at `5d46f84` on 2026-11-18. The UI restores the owner-supplied portfolio screenshot's dashboard, indigo workspace shell, colored summary cards, and project-card hierarchy. Metrics use real owner data; search/status filters preserve separate owned/shared lists. Production remains on `935418c` while new features are reviewed. [Design reference](UI-REFERENCE.md)
+
+## Immediate direction
+
+**Fact:** current integration contains the feature branches; `main` still lacks them. Follow the [main-consolidation and pruning plan](BRANCH-CONSOLIDATION.md) before starting future branches from `main`. Keep UI deployment separate from source consolidation. [Fresh-chat handoff](HANDOFF.md).
+
+**Unknown owner inputs:** legal operator/contact, audience/jurisdictions, retention/deletion process and copyright-reporting/agent status. The [readiness audit](PRIVACY-READINESS.md) found no implemented external fonts, replay, marketing sender or subscription checkout to repair. Resolve actual inputs before adding policy-dependent behavior.
 
 ## Delivery order
 
