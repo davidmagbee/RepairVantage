@@ -59,3 +59,9 @@ Open **Inventory** in workspace navigation to add or edit parts and tools and th
 On active owned projects, select **Edit dates**. Enter optional **Project start (UTC)** and **Project end (UTC)** values. These times use UTC regardless of the browser timezone. **Save dates** updates only changed endpoints; clearing an endpoint removes it. The end cannot precede the start. Failed saves retain the draft; **Cancel** leaves stored dates intact. Members and archived projects show dates without editing controls.
 
 Open **Schedule** and choose a range containing the project dates to see the project in the calendar or timeline. Unchanged endpoints retain their original seconds even though the editor displays minutes.
+
+## Portfolio-reference workspace
+
+The design branch `dev/portfolio-ui` restores the portfolio screenshot's indigo navigation, summary cards, dashboard panels, and light workspace. Open **Dashboard** at `/projects/dashboard`; sign-in destinations and the default project list remain unchanged. Project search and status filters operate on the account-scoped owned and shared lists.
+
+Dashboard totals exclude archived projects and shared projects. Active means Planned, In progress, or On hold. Upcoming deadlines are unfinished tasks in active projects over the next seven days, capped at five; dates use UTC. **Recent project updates** shows saved project timestamps, not a historical activity log. [Design reference](../docs/UI-REFERENCE.md).

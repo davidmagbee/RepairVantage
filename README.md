@@ -12,7 +12,9 @@ Click anywhere on an owned or shared project card to open its details. Keyboard 
 
 ## Project status
 
-**Development branch.** The owner workspace and sharing workflows are live. The development branch adds archive and restore, confirmed deletion, a task board with member assignment, owner inventory with stock shortfalls, scheduling views, and project reports. The [roadmap](docs/ROADMAP.md) tracks release verification and later phases. The [implementation guide](docs/IMPLEMENTATION.md) translates the original [Cursor plan](.cursorrules) into acceptance criteria.
+**Live release · 2026-11-13.** The owner workspace includes archive and restore, confirmed deletion, a task board with member assignment, owner inventory with stock shortfalls, UTC project-date editing and scheduling views, and USD expense/hour reports with CSV export and printing. [Release `935418c`](docs/DEPLOYMENT.md#release-2026-11-13) is deployed at the canonical URL. The owner confirmed the unchanged production sign-in and account-linking flows; new feature walkthroughs remain owner QA. The [roadmap](docs/ROADMAP.md) tracks those checks and remaining dependency, calendar-event, conflict, reporting, and UX work. The [implementation guide](docs/IMPLEMENTATION.md) translates the original [Cursor plan](.cursorrules) into acceptance criteria.
+
+A portfolio-reference UI restoration is on `dev/portfolio-ui`, separate from the deployed release while the owner reviews feature behavior. See the [design reference and dashboard semantics](docs/UI-REFERENCE.md).
 
 The frontend is React and Vite. The same-origin backend is Express, Apollo GraphQL, Better Auth, Prisma 7, and PostgreSQL.
 

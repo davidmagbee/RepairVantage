@@ -85,16 +85,19 @@ export const resolvers = {
     dashboardData: async (_parent: unknown, _args: unknown, context: Context) => {
       const userId = ownerId(context);
       const now = new Date();
+      // All dashboard panels share the same owner/archive boundary; shared projects stay outside these totals.
+      const owned = { userId, archivedAt: null };
       const [statuses, recentProjects, upcomingDeadlines] = await Promise.all([
-        context.prisma.project.groupBy({ by: ['status'], where: { userId }, _count: { _all: true } }),
-        context.prisma.project.findMany({ where: { userId }, orderBy: { updatedAt: 'desc' }, take: 5 }),
+        context.prisma.project.groupBy({ by: ['status'], where: owned, _count: { _all: true } }),
+        context.prisma.project.findMany({ where: owned, orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }], take: 5 }),
         context.prisma.task.findMany({
           where: {
-            project: { userId },
+            // Finished or cancelled projects must not keep surfacing their unfinished legacy tasks.
+            project: { ...owned, status: { in: ['PLANNED', 'IN_PROGRESS', 'ON_HOLD'] } },
             dueDate: { gte: now, lte: new Date(now.getTime() + 7 * 86400000) },
             status: { not: 'COMPLETED' },
           },
-          orderBy: { dueDate: 'asc' },
+          orderBy: [{ dueDate: 'asc' }, { id: 'asc' }],
           take: 5,
         }),
       ]);

@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
 import PrivateRoute, { GuestRoute } from './components/PrivateRoute';
 import AcceptInvitation from './pages/AcceptInvitation';
 import Inventory from './pages/Inventory';
@@ -26,6 +27,7 @@ export default function App() {
       <Route element={<PrivateRoute />}>
         <Route path="projects" element={<Layout />}>
           <Route index element={<ProjectList />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="new" element={<NewProject />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="schedule" element={<Schedule />} />

@@ -53,3 +53,24 @@ test('opens owned and shared projects from the card padding and keyboard', async
   await expect(page).toHaveURL('/projects/shared-repair');
   await expect(page.getByRole('heading', { name: sharedProject.name })).toBeVisible();
 });
+
+test('project filters keep owned and shared results separate and can be cleared', async ({ page }) => {
+  await page.route('**/api/auth/get-session', route => route.fulfill({ json: { user: owner, session } }));
+  await page.route('**/graphql', route => route.fulfill({ json: { data: {
+    projects: [ownedProject], sharedProjects: [sharedProject],
+  } } }));
+  await page.goto('/projects');
+  await page.getByLabel('Search projects').fill('shed');
+  await expect(page.getByRole('region', { name: 'Owned projects' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Shared with you' }).getByRole('link', { name: sharedProject.name, exact: true })).toBeVisible();
+  await page.getByLabel('Search projects').fill('no matching repair');
+  await expect(page.getByRole('status')).toHaveText('No projects match your filters.');
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(page.getByRole('region', { name: 'Owned projects' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Shared with you' })).toBeVisible();
+  await page.getByLabel('Filter by status').selectOption('COMPLETED');
+  await expect(page.getByRole('status')).toHaveText('No projects match your filters.');
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(page.getByLabel('Filter by status')).toHaveValue('');
+  await expect(page.getByRole('link', { name: ownedProject.name, exact: true })).toBeVisible();
+});
