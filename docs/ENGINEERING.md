@@ -30,6 +30,10 @@ Before every commit, review the staged change against all project docs. Include 
 
 Before every push, review the full commit range being published. Verify affected links and commands, and reconcile the roadmap with the release state actually verified. Record the documents reviewed in the PR body. Include the documentation and verification delta for subsequent pushes.
 
+## Branch direction
+
+The [consolidation plan](BRANCH-CONSOLIDATION.md) records the transition from the legacy integration branch to `main`. Until that reviewed merge occurs, the old `main` is not the current application baseline. After consolidation, create short-lived `dev/<feature>` branches from fast-forwarded `main`, target PRs at `main`, and keep production promotion separate. Before pruning, prove containment of each latest local/remote tip and check worktrees/open PRs. The [fresh-chat handoff](HANDOFF.md) records current source, deployed source, evidence and next action.
+
 ## Local checks
 
 Install each package from its lockfile. Run the commands from the repository root.
