@@ -32,7 +32,8 @@ test('PostgreSQL reports reconcile owner-only USD expenses and assigned task hou
   async function account(name) {
     const user = await prisma.user.create({ data: { name, emailVerified: true, email: `${randomUUID()}@example.test` } });
     userIds.push(user.id);
-    return user;
+    // Resolver fixtures represent principals whose current declaration was already accepted.
+    return { ...user, eligibilityAcknowledged: true };
   }
   async function execute(query, variables, user) {
     const { body } = await apollo.executeOperation({ query, variables }, { contextValue: { prisma, user } });

@@ -7,8 +7,11 @@ const origin = 'http://localhost:5173';
 const otpEndpoint = 'http://127.0.0.1:4000/__test/otp';
 
 test.skip(process.env.REAL_API !== '1', 'Requires the disposable Better Auth and PostgreSQL test server.');
+test.use({ realEligibility: true });
 
 async function verifyEmail(page: Page, request: APIRequestContext, email: string) {
+  await page.getByLabel('Age in years').fill('36');
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByLabel('Email address').fill(email);
   // Surface an HTTP rejection before waiting for the next form to appear.
   const sent = page.waitForResponse(response => response.request().method() === 'POST'
@@ -22,6 +25,8 @@ async function verifyEmail(page: Page, request: APIRequestContext, email: string
   const { code } = await response.json();
   await page.getByLabel('One-time code').fill(code);
   await page.getByRole('button', { name: 'Verify code' }).click();
+  await page.getByRole('checkbox', { name: 'I confirm that I am at least 18 years old.' }).check();
+  await page.getByRole('button', { name: 'Confirm and continue' }).click();
 }
 
 test('owner shares a real project with a new member and publishes a separate Showcase', async ({ browser, page, request }) => {

@@ -13,7 +13,7 @@ npm --prefix server run build
 npm --prefix server run dev
 ```
 
-The dev listener defaults to port 4000. The Vite client forwards `/graphql` and `/api/auth` to that listener. Open the browser at the exact `APP_ORIGIN`, which defaults to `http://localhost:5173` outside production.
+The dev listener defaults to port 4000. The Vite client forwards `/graphql`, `/api/auth` and `/api/eligibility` to that listener. Open the browser at the exact `APP_ORIGIN`, which defaults to `http://localhost:5173` outside production.
 
 | Setting | Purpose |
 | --- | --- |
@@ -46,11 +46,11 @@ For an explicitly authorized demonstration account, use the [opt-in legacy proje
 
 Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefix server run prisma:deploy` as a release step. Prisma 7 loads [`prisma.config.ts`](prisma.config.ts) for CLI commands. Client generation and builds run without database credentials. The start command requires a successful build and available schema. `GET /health` checks liveness. `GET /ready` checks the application and database before routing traffic. See the [release runbook](../docs/DEPLOYMENT.md) for the deployment target and smoke checks.
 
-Production source `935418c7916aea7e9f9405394d4e6f9af02d968c` was promoted on 2026-11-13 with all seven migrations applied. Archive, owner-inventory, and expense migrations ran through the verified-TLS direct owner connection; runtime expense DML grants and owner default privileges were verified. [Release evidence and remaining authenticated QA](../docs/DEPLOYMENT.md#release-2026-11-13). Roll back only to an archive-aware application once archived projects exist.
+Production UI source `472cd93` was promoted on 2026-11-24; it retains the seven-migration schema. The new eligibility feature adds two more migrations that have only been exercised in disposable PostgreSQL at this checkpoint. Apply both and verify runtime privileges before releasing eligibility code. [Release evidence](../docs/DEPLOYMENT.md). Rollbacks must preserve every deployed access restriction, including archive policy and, once deployed, eligibility holds.
 
 ## Access policy
 
-- GraphQL accepts JSON POST from the configured origin. A verified session is required for workspace operations.
+- GraphQL accepts JSON POST from the configured origin. A verified session and current eligibility acknowledgment are required for workspace operations. Under-age authenticated declarations persist a hold; a new cookie cannot clear it. Public Showcase reads remain separate. [Eligibility API, audit trail and operations](../docs/ACCOUNT-ELIGIBILITY.md).
 - Project owners can create, update, delete, invite, remove members, and publish or unpublish Showcase links. Owners can list, create, edit, and permanently delete tasks. Task deletion cascades to related assignments, dependency edges, and calendar entries.
 - Owners can archive and restore projects. Archived project content is read-only. Existing invitation acceptance, revocation, member removal, and unpublishing remain available.
 - Invitations bind a single-use link to the recipient's verified email. Links expire after seven days. Reissuing an invite revokes the previous link. Removing a member also revokes pending links for their email.

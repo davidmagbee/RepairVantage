@@ -43,6 +43,20 @@ Local acceptance passed 47 Node and 67 Chromium tests, with 99.07% V8 source lin
 
 PR #3 merged the portfolio UI into `dev/engineering-harness` at `5d46f84`; no UI deployment was performed in this handoff task. Read-only provider inspection still resolved the canonical domain to `dpl_BovbvZrLoDipVbNVqmrLo7ouBj2A` and the public client loaded `index-DXf-RjAI.js`, matching the recorded `935418c` release. The Vercel project reported no Git connection, and repository Verify contains no deployment step. External automation was not comprehensively ruled out; recheck before the [main consolidation](BRANCH-CONSOLIDATION.md). Release the reviewed UI source separately using the package-and-release procedure; a branch merge does not apply hosted migrations or promote a deployment.
 
+## Release 2026-11-24 · restored UI
+
+Consolidation PR #5 merged at `ca8fe43`; dependency PR #6 merged at `678d25e`, with both PR checks and resulting main CI passing. The release packages reviewed source `472cd93ff4338721d39dc8de52fa0700d6b71252` (PR #6 head), whose tree is the main merge's tree. This includes the restored UI and scoped patched Effect dependency, with no auth-source/provider changes. Client/server runtime npm audits returned zero after the patch.
+
+Staged production deployment [`dpl_8V69mRY95LqEm3pi4GmgEMt3DixZ`](https://vercel.com/davidmagbees-projects/repairvantage/8V69mRY95LqEm3pi4GmgEMt3DixZ) passed authenticated protected-deployment reads for readiness, provider discovery and the dashboard shell. It was then promoted to [the canonical origin](https://repairvantage.davidmagbee.com). Public checks returned 200 for `/`, `/ready`, provider discovery and `/projects/dashboard`; HTML matched `index-Lwc0KQGF.js` / `index-Ba_5MxwD.css`. Signed-out GraphQL denied `me` with `UNAUTHENTICATED` and no private data. Existing owner-confirmed authentication remains unchanged; no new hosted provider acceptance is claimed.
+
+Fresh pre-release baseline: 48 Node + 71 Chromium tests, 99.03% lines / 96.82% branches (`coverage/run-YouhOV/report/`), lint/build and built-package desktop/mobile checks. Dependency patch additionally passed Prisma generation/build, unit tests, audit and current PR/main CI. UI captures used synthetic data; owner feature acceptance remains separate.
+
+No production migration was run for this release; it uses the previously applied seven migrations. Previous deployment `dpl_BovbvZrLoDipVbNVqmrLo7ouBj2A` remains archive-aware. Vercel Git linkage remained absent at the execution recheck; source merges do not deploy automatically through the repository Verify workflow.
+
+### Eligibility release gate
+
+The separate account-eligibility feature requires migrations `20261124163000_account_eligibility` and `20261124170000_account_eligibility_restriction`, runtime acknowledgment-table privileges and User restriction-column access. Neither new migration was applied to production during the UI release. After eligibility is deployed, rollback to a build that ignores acknowledgments or holds is unsafe; preserve that boundary. Verify real OTP, Google consent/linking, existing-session acknowledgment, public privacy route, restriction denial and sign-out before calling the new auth workflow accepted. [Full criteria](ACCOUNT-ELIGIBILITY.md).
+
 ## Release QA
 
 - Request `/`, `/health`, and `/ready`. Open and refresh a nested client route. Confirm GraphQL and auth paths receive API responses.

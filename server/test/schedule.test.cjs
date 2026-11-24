@@ -22,7 +22,8 @@ test('schedule returns only owned dated work, with allowed assignees and project
   async function account(name) {
     const user = await prisma.user.create({ data: { name, email: `${randomUUID()}@example.test`, emailVerified: true } });
     users.push(user.id);
-    return user;
+    // Resolver fixtures represent principals whose current declaration was already accepted.
+    return { ...user, eligibilityAcknowledged: true };
   }
   const [owner, member, outsider] = await Promise.all([account('Owner'), account('Member'), account('Outsider')]);
   const date = day => new Date(`2026-10-${day}T00:00:00.000Z`);

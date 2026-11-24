@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { authClient } from '../context/auth-client';
 import { returnPath } from '../context/return-path';
+import AgeScreen from '../components/AgeScreen';
 
 interface Providers {
   google: boolean;
@@ -33,6 +34,7 @@ export default function Login({ createAccount = false }: { createAccount?: boole
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string>();
+  const [eligibilityRevision, setEligibilityRevision] = useState(0);
   const googleError = params.get('error');
   const hasProvider = Boolean(providers?.google || providers?.emailOtp);
   const displayedError = message ?? (providers && hasProvider && googleError
@@ -67,6 +69,7 @@ export default function Login({ createAccount = false }: { createAccount?: boole
       setSentTo(address);
       setCode('');
     } catch {
+      setEligibilityRevision(value => value + 1);
       setMessage('Could not send a code. Check the email address or try again later.');
     } finally {
       setBusy(false);
@@ -86,6 +89,7 @@ export default function Login({ createAccount = false }: { createAccount?: boole
       const result = await authClient.signIn.emailOtp({ email: sentTo, otp: code.trim() });
       if (result.error) throw result.error;
     } catch {
+      setEligibilityRevision(value => value + 1);
       setMessage('Could not verify that code. Try again or request a new code.');
     } finally {
       setBusy(false);
@@ -103,6 +107,8 @@ export default function Login({ createAccount = false }: { createAccount?: boole
       });
       if (result.error) throw result.error;
     } catch {
+      // Expired preflight cookies must return to screening across both providers.
+      setEligibilityRevision(value => value + 1);
       setMessage('Google sign-in could not be completed. Try again.');
       setBusy(false);
     }
@@ -115,12 +121,14 @@ export default function Login({ createAccount = false }: { createAccount?: boole
         <div className="card-body gap-4">
           <h1 className="text-3xl font-bold">{createAccount ? 'Create an account' : 'Sign in'}</h1>
           <p>{createAccount ? 'Start tracking your repair projects.' : 'Open your repair projects.'}</p>
+          <Link className="link text-sm" to="/privacy">Privacy and data requests</Link>
           {displayedError && <p role="alert" className="alert alert-error">{displayedError}</p>}
           {providerError && <p role="alert">Could not load sign-in options. Reload to try again.</p>}
           {!providerError && !providers && <p role="status">Loading sign-in options…</p>}
           {providers && !hasProvider && (
             <p role="status">Sign-in and account creation are currently unavailable. Please try again later.</p>
           )}
+          {hasProvider && <AgeScreen refreshKey={eligibilityRevision}>
           {providers?.google && (
             <button className="btn btn-outline w-full" type="button" disabled={busy} onClick={() => void signInWithGoogle()}>
               Continue with Google
@@ -175,6 +183,7 @@ export default function Login({ createAccount = false }: { createAccount?: boole
               )}
             </form>
           )}
+          </AgeScreen>}
           {hasProvider && (createAccount ? (
             <p>Already registered? <Link to="/login" state={{ returnTo: destination }} className="link">Sign in</Link></p>
           ) : (

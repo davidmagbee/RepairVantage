@@ -30,7 +30,8 @@ test('PostgreSQL task assignment limits member access and clears it on removal',
   async function account(name, emailVerified = true) {
     const user = await prisma.user.create({ data: { name, emailVerified, email: `${randomUUID()}@example.test` } });
     users.push(user.id);
-    return user;
+    // Resolver fixtures represent principals whose current declaration was already accepted.
+    return { ...user, eligibilityAcknowledged: true };
   }
 
   async function execute(query, variables, user) {

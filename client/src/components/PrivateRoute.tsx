@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { returnPath } from '../context/return-path';
+import EligibilityGate from './EligibilityGate';
 
 // Render the pending or failed snapshot the route guard already selected.
 function SessionStatus({ loading, retry }: { loading: boolean; retry: () => void }) {
@@ -18,7 +19,7 @@ export default function PrivateRoute() {
   const { pathname } = useLocation();
   if (loading || error) return <SessionStatus loading={loading} retry={retry} />;
   if (!user) return <Navigate to="/login" state={{ returnTo: pathname }} replace />;
-  return <Outlet />;
+  return <EligibilityGate key={user.id}><Outlet /></EligibilityGate>;
 }
 
 export function GuestRoute() {

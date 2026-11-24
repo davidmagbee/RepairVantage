@@ -13,12 +13,15 @@ import ProjectList from './pages/ProjectList';
 import ProjectReport from './pages/ProjectReport';
 import Schedule from './pages/Schedule';
 import Showcase from './pages/Showcase';
+import EligibilityGate from './components/EligibilityGate';
+import Privacy from './pages/Privacy';
 
 export default function App() {
   return (
     <Routes>
       <Route index element={<Landing />} />
-      <Route path="invite" element={<AcceptInvitation />} />
+      <Route path="privacy" element={<Privacy />} />
+      <Route path="invite" element={<EligibilityGate><AcceptInvitation /></EligibilityGate>} />
       <Route path="showcase/:slug" element={<Showcase />} />
       <Route element={<GuestRoute />}>
         <Route path="login" element={<Login key="login" />} />

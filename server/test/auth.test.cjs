@@ -70,12 +70,17 @@ test('email-code enrollment issues a verified session and logout revokes it', as
   const ipPrefix = `192.${randomBytes(1)[0]}.${randomBytes(1)[0]}`;
   const ip = `${ipPrefix}.1`;
   const baseURL = `http://127.0.0.1:${listener.address().port}`;
+  // Real authentication now starts with a recent neutral eligibility declaration.
+  const screened = await fetch(`${baseURL}/api/eligibility/screen`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify({ age: 25 }),
+  });
+  const eligibilityCookie = screened.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
   async function post(path, payload, { browserOrigin = origin, cookie, clientIp = ip } = {}) {
     return fetch(`${baseURL}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json', Origin: browserOrigin, 'X-Forwarded-For': clientIp,
-        ...(cookie ? { Cookie: cookie } : {}),
+        Cookie: [eligibilityCookie, cookie].filter(Boolean).join('; '),
       },
       body: JSON.stringify(payload),
     });
@@ -90,6 +95,9 @@ test('email-code enrollment issues a verified session and logout revokes it', as
 
     const requestCode = '/api/auth/email-otp/send-verification-otp';
     assert.equal((await post(requestCode, { email, type: 'sign-in' }, { browserOrigin: 'https://outside.example' })).status, 403);
+    // Valid screening must not turn malformed auth bodies into enrollment or delivery attempts.
+    assert.equal((await post(requestCode, undefined, { clientIp: `${ipPrefix}.5` })).status, 400);
+    assert.equal((await post(requestCode, { type: 'sign-in' }, { clientIp: `${ipPrefix}.6` })).status, 400);
     assert.equal((await post(requestCode, { email, type: 'forget-password' })).status, 400);
     const badAddress = await post(requestCode, { email: 'not-an-email', type: 'sign-in' }, { clientIp: `${ipPrefix}.4` });
     assert.equal(badAddress.status, 400);
@@ -106,6 +114,7 @@ test('email-code enrollment issues a verified session and logout revokes it', as
     assert.equal(codes[0].recipient, email);
 
     const signIn = '/api/auth/sign-in/email-otp';
+    assert.equal((await post(signIn, undefined, { clientIp: `${ipPrefix}.7` })).status, 400);
     const input = { email, otp: codes[0].code, name: 'Integration Owner' };
     const invalidName = await post(signIn, { ...input, name: 'x'.repeat(121) });
     assert.equal(invalidName.status, 400);
@@ -122,6 +131,10 @@ test('email-code enrollment issues a verified session and logout revokes it', as
     assert.equal((await post(signIn, input)).ok, false);
 
     const query = { query: '{ me { email name } }' };
+    const required = await post('/graphql', query, { cookie });
+    assert.equal((await required.json()).errors[0].extensions.code, 'ELIGIBILITY_REQUIRED');
+    const { ELIGIBILITY_POLICY } = require('../dist/eligibility.js');
+    assert.equal((await post('/api/eligibility/acknowledgment', { policyVersion: ELIGIBILITY_POLICY.policyVersion, accepted: true }, { cookie })).status, 204);
     const authorized = await post('/graphql', query, { cookie });
     assert.equal(authorized.headers.get('cache-control'), 'no-store');
     assert.deepEqual((await authorized.json()).data.me, { email, name: 'Integration Owner' });
@@ -163,6 +176,11 @@ async function providerHarness(t, env, cleanRecords) {
   });
   const base = `http://127.0.0.1:${listener.address().port}`;
   const ip = `198.${randomBytes(1)[0]}.${randomBytes(1)[0]}`;
+  const screened = await fetch(base + '/api/eligibility/screen', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify({ age: 25 }),
+  });
+  assert.equal(screened.status, 204);
+  const eligibilityCookie = screened.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
   return {
     prisma: application.prisma,
     request(path, payload, requestNumber, cookie) {
@@ -172,7 +190,8 @@ async function providerHarness(t, env, cleanRecords) {
           Origin: origin,
           'X-Forwarded-For': `${ip}.${requestNumber}`,
           ...(payload ? { 'Content-Type': 'application/json' } : {}),
-          ...(cookie ? { Cookie: cookie } : {}),
+          // An explicit screening cookie replaces the fixture default, matching a browser's single cookie value.
+          Cookie: [cookie?.includes('repairvantage.eligibility=') ? undefined : eligibilityCookie, cookie].filter(Boolean).join('; '),
         },
         body: payload ? JSON.stringify(payload) : undefined,
         redirect: 'manual',
@@ -229,12 +248,21 @@ test('Google OAuth accepts authoritative mailboxes and rejects unproven third-pa
   const kid = 'local-google-key';
   const jwk = { ...publicKey.export({ format: 'jwk' }), kid, alg: 'RS256', use: 'sig' };
   const claimsByCode = new Map();
+  const directEmail = `repair-direct-${randomUUID()}@gmail.com`;
   const cases = [
     { email: `repair-${randomUUID()}@gmail.com`, email_verified: true, verified: true },
     { email: `repair-${randomUUID()}@example.test`, email_verified: true, hd: 'example.test', verified: true },
     { email: `repair-${randomUUID()}@example.test`, email_verified: true, verified: false },
     { email: `repair-${randomUUID()}@gmail.com`, email_verified: false, verified: false },
+    { email: `repair-${randomUUID()}@gmail.com`, email_verified: true, verified: true, existing: true },
+    { email: `repair-rejected-${randomUUID()}@gmail.com`, email_verified: true, verified: false, rejectedCallback: true },
   ];
+  const signedToken = claims => {
+    const now = Math.floor(Date.now() / 1000);
+    const payload = { ...claims, aud: clientId, iss: 'https://accounts.google.com', iat: now, exp: now + 300 };
+    const encoded = [{ alg: 'RS256', kid }, payload].map(value => Buffer.from(JSON.stringify(value)).toString('base64url')).join('.');
+    return `${encoded}.${sign('RSA-SHA256', Buffer.from(encoded), privateKey).toString('base64url')}`;
+  };
   const nativeFetch = globalThis.fetch;
   t.mock.method(globalThis, 'fetch', async (input, options) => {
     const url = new URL(input instanceof Request ? input.url : input);
@@ -245,34 +273,40 @@ test('Google OAuth accepts authoritative mailboxes and rejects unproven third-pa
     const params = new URLSearchParams(await request.text());
     const claims = claimsByCode.get(params.get('code'));
     assert.ok(claims, 'OAuth token exchange must use the issued test authorization code');
-    const now = Math.floor(Date.now() / 1000);
-    const payload = { ...claims, aud: clientId, iss: 'https://accounts.google.com', iat: now, exp: now + 300 };
-    const encoded = [{ alg: 'RS256', kid }, payload]
-      .map(value => Buffer.from(JSON.stringify(value)).toString('base64url')).join('.');
-    const signature = sign('RSA-SHA256', Buffer.from(encoded), privateKey).toString('base64url');
-    return Response.json({ access_token: 'synthetic-access', token_type: 'Bearer', id_token: `${encoded}.${signature}` });
+    return Response.json({ access_token: 'synthetic-access', token_type: 'Bearer', id_token: signedToken(claims) });
   });
   const { prisma, request } = await providerHarness(t, {
     GOOGLE_CLIENT_ID: clientId,
     GOOGLE_CLIENT_SECRET: 'test-only-secret',
   }, async prisma => {
-    await prisma.user.deleteMany({ where: { email: { in: cases.map(item => item.email) } } });
+    await prisma.user.deleteMany({ where: { email: { in: [...cases.map(item => item.email), directEmail] } } });
   });
 
-  for (const [index, { verified, ...profile }] of cases.entries()) {
+  for (const [index, { verified, existing, rejectedCallback, ...profile }] of cases.entries()) {
     const number = index + 1;
+    // An existing verified local identity is linked, not replaced, by authoritative Google sign-in.
+    const prior = existing ? await prisma.user.create({ data: { email: profile.email, name: 'Existing local account', emailVerified: true } }) : null;
     const kickoff = await request('/api/auth/sign-in/social', {
       provider: 'google', callbackURL: '/projects', errorCallbackURL: '/login',
+      additionalData: { serverContext: { eligibility: { policyVersion: 'forged', eligible: false } } },
     }, number);
     const result = await kickoff.json();
     assert.equal(kickoff.status, 200, JSON.stringify(result));
     const authorize = new URL(result.url);
+    assert.equal(authorize.hostname, 'accounts.google.com');
+    assert.equal(authorize.searchParams.get('response_type'), 'code');
+    assert.ok(authorize.searchParams.get('state'));
     assert.equal(authorize.searchParams.get('redirect_uri'), 'http://localhost:5173/api/auth/callback/google');
     const code = `local-code-${number}`;
     const nonce = authorize.searchParams.get('nonce');
     claimsByCode.set(code, { ...profile, sub: randomUUID(), name: 'OAuth test', ...(nonce ? { nonce } : {}) });
     const callback = new URLSearchParams({ code, state: authorize.searchParams.get('state') });
-    const cookie = kickoff.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
+    let cookie = kickoff.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
+    if (rejectedCallback) {
+      const rejected = await request('/api/eligibility/screen', { age: 17 }, number);
+      assert.equal(rejected.status, 403);
+      cookie += '; ' + rejected.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
+    }
     const completed = await request(`/api/auth/callback/google?${callback}`, null, number, cookie);
     assert.equal(completed.status, 302);
     const destination = new URL(completed.headers.get('location'), 'http://localhost:5173');
@@ -281,10 +315,38 @@ test('Google OAuth accepts authoritative mailboxes and rejects unproven third-pa
       assert.equal(destination.pathname, '/projects');
       assert.equal(user.emailVerified, true);
       assert.ok(completed.headers.getSetCookie().some(value => value.startsWith('repairvantage.session_token=')));
+      if (prior) assert.equal(user.id, prior.id);
+      assert.equal(await prisma.account.count({ where: { userId: user.id, providerId: 'google' } }), 1);
+      const sessionCookie = completed.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
+      const privateRead = { query: '{ me { email } }' };
+      const denied = await request('/graphql', privateRead, number, sessionCookie);
+      assert.equal((await denied.json()).errors[0].extensions.code, 'ELIGIBILITY_REQUIRED');
+      assert.equal(await prisma.eligibilityAcknowledgment.count({ where: { userId: user.id } }), 0);
+      const { ELIGIBILITY_POLICY } = require('../dist/eligibility.js');
+      assert.equal((await request('/api/eligibility/acknowledgment', { policyVersion: ELIGIBILITY_POLICY.policyVersion, accepted: true }, number, sessionCookie)).status, 204);
+      const allowed = await request('/graphql', privateRead, number, sessionCookie);
+      assert.equal((await allowed.json()).data.me.email, profile.email);
     } else {
       assert.equal(destination.pathname, '/login');
-      assert.equal(destination.searchParams.get('error'), 'google_email_not_authoritative');
+      assert.equal(destination.searchParams.get('error'), rejectedCallback ? 'ELIGIBILITY_REQUIRED' : 'google_email_not_authoritative');
       assert.equal(user, null);
+      assert.equal(completed.headers.getSetCookie().some(value => value.startsWith('repairvantage.session_token=')), false);
     }
   }
+
+  // The direct idToken API is a separate enrollment path and must retain the same acknowledgment boundary.
+  const direct = await request('/api/auth/sign-in/social', {
+    provider: 'google', callbackURL: '/projects',
+    idToken: { token: signedToken({ email: directEmail, email_verified: true, sub: randomUUID(), name: 'Direct Google test' }) },
+  }, 10);
+  const directBody = await direct.json();
+  assert.equal(direct.status, 200, JSON.stringify(directBody));
+  assert.equal(directBody.redirect, false);
+  assert.equal(directBody.user.email, directEmail);
+  const directCookie = direct.headers.getSetCookie().map(value => value.split(';')[0]).join('; ');
+  const denied = await request('/graphql', { query: '{ me { email } }' }, 10, directCookie);
+  assert.equal((await denied.json()).errors[0].extensions.code, 'ELIGIBILITY_REQUIRED');
 });
+
+// Keep eligibility's real OTP cases in this process to avoid racing the intentional one-send daily-budget test.
+require('./eligibility.cases.cjs');

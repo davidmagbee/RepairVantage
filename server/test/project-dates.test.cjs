@@ -29,7 +29,8 @@ test('project dates validate effective owner edits while preserving legacy unrel
   async function account() {
     const user = await prisma.user.create({ data: { name: 'Date tester', email: `${randomUUID()}@example.test`, emailVerified: true } });
     users.push(user.id);
-    return user;
+    // Resolver fixtures represent principals whose current declaration was already accepted.
+    return { ...user, eligibilityAcknowledged: true };
   }
   async function execute(query, variables, user) {
     const { body } = await apollo.executeOperation({ query, variables }, { contextValue: { prisma, user } });

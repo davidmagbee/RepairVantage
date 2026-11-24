@@ -46,7 +46,7 @@ test('DateTime serializes database dates and rejects an invalid resolver result'
 
 test('project writes preserve unexpected persistence failures for the error boundary', async () => {
   const failure = new Error('Synthetic database outage');
-  const user = { id: 'owner', email: 'owner@example.test', emailVerified: true };
+  const user = { id: 'owner', email: 'owner@example.test', emailVerified: true, eligibilityAcknowledged: true };
   const transaction = {
     $queryRaw: async () => [{ userId: user.id, archivedAt: null }],
     project: { update: async () => { throw failure; } },
@@ -56,4 +56,15 @@ test('project writes preserve unexpected persistence failures for the error boun
     resolvers.Mutation.updateProject(null, { id: 'project', input: { name: 'Changed' } }, { user, prisma }),
     error => error === failure,
   );
+});
+
+// Existing verified identities must acknowledge the current rule before any private resolver reaches persistence.
+test('verified sessions without acknowledgment cannot reach private reads or writes', async () => {
+  for (const eligibilityAcknowledged of [undefined, false]) {
+    const user = { id: 'existing', email: 'existing@example.test', emailVerified: true, eligibilityAcknowledged };
+    for (const query of ['{ me { id } }', 'mutation { createProject(input: {name: "test"}) { id } }']) {
+      const result = await operation(query, user);
+      assert.equal(result.errors[0].extensions.code, 'ELIGIBILITY_REQUIRED');
+    }
+  }
 });

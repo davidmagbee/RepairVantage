@@ -18,6 +18,8 @@ model User {
   password       String?
   name           String
   emailVerified  Boolean   @default(false)
+  // A signed-in under-age declaration requires operator review; a new cookie cannot clear it.
+  eligibilityRestrictedAt DateTime?
   role           Role      @default(USER)
   profilePicture String?
   createdAt      DateTime  @default(now())
@@ -30,6 +32,20 @@ model User {
   projectComments ProjectComment[]
   sessions       Session[]
   accounts       Account[]
+  eligibilityAcknowledgments EligibilityAcknowledgment[]
+}
+
+// Acknowledgments are versioned self-declarations, not documentary age verification.
+model EligibilityAcknowledgment {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  policyVersion String
+  statement     String
+  source        String
+  acceptedAt    DateTime @default(now())
+
+  @@unique([userId, policyVersion])
 }
 
 enum Role {

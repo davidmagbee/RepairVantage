@@ -11,7 +11,11 @@ npm ci
 npm run dev -- --strictPort
 ```
 
-Open `http://localhost:5173`. Vite proxies `/api/auth` and `/graphql` to Express on loopback port 4000. The browser origin must match the server's configured origin for OAuth, cookies, and request validation.
+Open `http://localhost:5173`. Vite proxies `/api/auth`, `/api/eligibility` and `/graphql` to Express on loopback port 4000. The browser origin must match the server's configured origin for OAuth, cookies, and request validation.
+
+## Account eligibility and privacy
+
+Login and registration screen age before email/Google account actions. After authentication, both new and existing accounts must explicitly acknowledge the current 18+ declaration before workspace or invitation access. A failed policy read blocks access with retry; sign-out and `/privacy` remain available. A private API policy denial refreshes the acknowledgment gate. These are self-declarations, not verified age. The public notice links the approved privacy/deletion mailbox. [Behavior, release prerequisites and country expansion](../docs/ACCOUNT-ELIGIBILITY.md).
 
 ## Project navigation
 
@@ -62,6 +66,6 @@ Open **Schedule** and choose a range containing the project dates to see the pro
 
 ## Portfolio-reference workspace
 
-The design branch `dev/portfolio-ui` restores the portfolio screenshot's indigo navigation, summary cards, dashboard panels, and light workspace. Open **Dashboard** at `/projects/dashboard`; sign-in destinations and the default project list remain unchanged. Project search and status filters operate on the account-scoped owned and shared lists.
+The restored workspace matches the portfolio screenshot's indigo navigation, summary cards, dashboard panels, and light styling. It reached `main` and production; the old design branch is retired. Open **Dashboard** at `/projects/dashboard`; sign-in destinations and the default project list remain unchanged. Project search and status filters operate on the account-scoped owned and shared lists.
 
 Dashboard totals exclude archived projects and shared projects. Active means Planned, In progress, or On hold. Upcoming deadlines are unfinished tasks in active projects over the next seven days, capped at five; dates use UTC. **Recent project updates** shows saved project timestamps, not a historical activity log. [Design reference](../docs/UI-REFERENCE.md).

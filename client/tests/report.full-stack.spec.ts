@@ -3,11 +3,14 @@ import process from 'node:process';
 import { checkpointCoverage, expect, test } from './fixtures';
 
 test.skip(process.env.REAL_API !== '1', 'Requires the disposable Better Auth and PostgreSQL test server.');
+test.use({ realEligibility: true });
 
 test('an authenticated owner persists expenses and downloads matching report rows', async ({ page, request }) => {
   const email = `report-owner-${randomUUID()}@example.test`;
   const projectName = 'Porch report acceptance';
   await page.goto('/register');
+  await page.getByLabel('Age in years').fill('36');
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByLabel('Email address').fill(email);
   const sent = page.waitForResponse(response => response.request().method() === 'POST'
     && new URL(response.url()).pathname === '/api/auth/email-otp/send-verification-otp');
@@ -19,6 +22,8 @@ test('an authenticated owner persists expenses and downloads matching report row
   const { code } = await mail.json();
   await page.getByLabel('One-time code').fill(code);
   await page.getByRole('button', { name: 'Verify code' }).click();
+  await page.getByRole('checkbox', { name: 'I confirm that I am at least 18 years old.' }).check();
+  await page.getByRole('button', { name: 'Confirm and continue' }).click();
   await expect(page.getByRole('heading', { name: 'No projects yet' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Create project' }).click();

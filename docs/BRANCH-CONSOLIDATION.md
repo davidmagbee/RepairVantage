@@ -2,9 +2,9 @@
 
 ## Execution update · 2026-11-24
 
-**Fact:** [PR #5](https://github.com/davidmagbee/RepairVantage/pull/5) merged integration `5b513d9` into `main` at `ca8fe43cff0bf9167d48c4e98b398dc037732b5a`, preserving ancestry. PR Verify passed and independent source review found no consolidation blocker. A fresh local run passed 48 Node and 71 Chromium tests (99.03% lines, 96.82% branches), lint/build and built-package desktop/mobile checks. The resulting `main` CI must pass before pruning. The commands below preserve the original plan for reference; **do not open another consolidation PR**. Future PRs target `main`.
+**Fact:** [PR #5](https://github.com/davidmagbee/RepairVantage/pull/5) merged integration `5b513d9` into `main` at `ca8fe43cff0bf9167d48c4e98b398dc037732b5a`, preserving ancestry. PR Verify passed and independent source review found no consolidation blocker. A fresh local run passed 48 Node and 71 Chromium tests (99.03% lines, 96.82% branches), lint/build and built-package desktop/mobile checks. Resulting main CI passed; after PR #6 at `678d25e` also passed main CI, five contained local/remote branches were pruned: portfolio-ui, report-export-demo, handoff-main-consolidation, engineering-harness and runtime-audit-fix. A temporary clean main worktree, current PR/worktree checks, both-tip ancestry and exact deletion leases guarded cleanup. The commands below preserve the original plan for reference; **do not open another consolidation PR**. Future PRs target `main`.
 
-**Fact:** Vercel still had no Git link at the execution recheck. UI production promotion is held pending a scoped Effect dependency patch; merging source did not deploy or apply migrations. The earlier baseline below is historical, not the current branch state.
+**Fact:** Vercel still had no Git link at the execution recheck. The scoped Effect dependency patch passed and merged through PR #6; UI source472cd93 was separately promoted. Merging source did not itself deploy or apply migrations. The earlier baseline below is historical, not the current branch state.
 
 ## Verified baseline · 2026-11-18
 
