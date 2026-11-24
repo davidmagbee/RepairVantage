@@ -13,7 +13,7 @@ Do not merge the already-contained feature branches separately or squash/rebase 
 - PR #3 merged at `5d46f84`; its UI head `039ae0b` passed Verify: https://github.com/davidmagbee/RepairVantage/actions/runs/43487681054.
 - Recorded UI acceptance: 48 Node + 71 Chromium tests; 99.03% source lines and 96.82% branches. This is historical evidence for that source tree, not a new run of this consolidation PR.
 - Require this PR's current Verify run before merging. Inspect the full current range, remote tips, worktrees, open PR dependencies, and deployment triggers.
-- Production feature walkthroughs and operator privacy/copyright decisions remain open. Existing unchanged OTP/Google/linking are owner-confirmed.
+- Production feature walkthroughs, operator/contact and retention/deletion facts remain open. Owner scope is general-audience, US-only / 18+; eligibility enforcement is planned, not implemented. DMCA-specific work is deferred. Existing unchanged OTP/Google/linking are owner-confirmed.
 
 ## Documentation
 
