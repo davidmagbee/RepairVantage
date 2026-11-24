@@ -1,143 +1,63 @@
-# RepairVantage - Server
+# RepairVantage API
 
-Backend server for the RepairVantage repair management system.
+Express serves Apollo GraphQL and Better Auth. Prisma owns the PostgreSQL schema and checked-in migrations.
 
-## Technologies
+## Local development
 
-- **Node.js** - JavaScript runtime
-- **Express** - Web server framework
-- **Apollo Server** - GraphQL server
-- **Prisma** - ORM for database access
-- **PostgreSQL** - Primary database
-- **JWT** - Authentication mechanism
-- **bcrypt** - Password hashing
+Run from the repository root with the Node version in [`.nvmrc`](../.nvmrc). Keep local values in an ignored `server/.env` or your shell environment.
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v16+)
-- npm or yarn
-- PostgreSQL database
-
-### Installation
-
-```
-# Install dependencies
-npm install
-
-# Generate Prisma client
-npx prisma generate
-
-# Run database migrations
-npx prisma migrate dev
-
-# Start development server
-npm run dev
-
-# Start production server
-npm start
+```bash
+npm --prefix server ci --include=dev
+npm --prefix server run prisma:deploy
+npm --prefix server run build
+npm --prefix server run dev
 ```
 
-## Database Setup
+The dev listener defaults to port 4000. The Vite client forwards `/graphql` and `/api/auth` to that listener. Open the browser at the exact `APP_ORIGIN`, which defaults to `http://localhost:5173` outside production.
 
-1. Set up your PostgreSQL database
-2. Update the `.env` file with your database connection string
-3. Run the initial migration: `npx prisma migrate dev --name init`
+| Setting | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection URL for the running server. Use the pooled endpoint and restricted role on Neon. Production enforces [verified TLS](../docs/DEPLOYMENT.md#target). |
+| `DIRECT_DATABASE_URL` | Direct PostgreSQL connection URL for Prisma CLI database commands. For local development both variables can point to the same local database. Keep the production migration role off the web host. |
+| `APP_ORIGIN` | Browser origin with no trailing slash. Production requires HTTPS. |
+| `BETTER_AUTH_SECRET` | Random secret of at least 32 characters. Keep separate values per environment. |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth client. Configure `APP_ORIGIN/api/auth/callback/google` as an authorized redirect URI. |
+| `RESEND_API_KEY`, `AUTH_EMAIL_FROM` | Credentials and verified sender for sign-in codes. |
+| `AUTH_OTP_DAILY_LIMIT` | Maximum code requests per UTC day. Defaults to 75. Set below the email provider's available send quota. |
+| `PORT` | Local listener port, default 4000. |
+| `TRUST_PROXY_HOPS` | Number of trusted reverse-proxy hops. Default 0. Match the verified ingress path before relying on IP-based rate limits. |
 
-## Environment Variables
+Each provider activates only when its credentials are complete. The public site can load before sign-in is configured. Production `/ready` returns `auth_setup_required` while both providers are disabled. Local HTTP tests inject an email sender and use a disposable PostgreSQL database.
 
-Create a `.env` file in the server root directory:
+## Checks
 
-```
-DATABASE_URL="postgresql://username:password@localhost:5432/repairvantage?schema=public"
-JWT_SECRET="your-secret-key"
-PORT=4000
-NODE_ENV=development
-```
-
-## Project Structure
-
-```
-server/
-├── prisma/
-│   ├── schema.prisma    # Database schema
-│   └── migrations/      # Database migrations
-├── src/
-│   ├── graphql/         
-│   │   ├── resolvers/   # GraphQL resolvers
-│   │   └── typeDefs/    # GraphQL type definitions
-│   ├── models/          # Data models
-│   ├── services/        # Business logic
-│   ├── utils/           # Utility functions
-│   ├── middleware/      # Express middleware
-│   └── index.ts         # Application entry point
-├── .env                 # Environment variables
-└── package.json         # Dependencies and scripts
+```bash
+npm --prefix server run build
+npm --prefix server test
+TEST_DATABASE_URL="$RV_TEST_DATABASE_URL" npm --prefix server run test:integration
+TEST_DATABASE_URL="$RV_TEST_DATABASE_URL" npm --prefix server run test:auth
 ```
 
-## API Documentation
+Set `RV_TEST_DATABASE_URL` to a PostgreSQL database on loopback whose name ends in `_test`. Omit query parameters and URL fragments. Apply migrations there first with `DIRECT_DATABASE_URL="$RV_TEST_DATABASE_URL" npm --prefix server run prisma:deploy`. Both integration suites create test-only records. API tests exercise GraphQL policy with a verified-session context. Auth tests exercise the HTTP email-code flow with an injected sender.
 
-### GraphQL Endpoint
+## Release
 
-The GraphQL API is available at `/graphql` when the server is running. By default, this is `http://localhost:4000/graphql`.
+For an explicitly authorized demonstration account, use the [opt-in legacy project importer](../docs/DEMO.md). It requires `DEMO_DATABASE_URL` and an existing verified email, previews by default, and preserves authentication records and existing project edits. It never runs as part of a release or migration.
 
-### Authentication
+Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefix server run prisma:deploy` as a release step. Prisma 7 loads [`prisma.config.ts`](prisma.config.ts) for CLI commands. Client generation and builds run without database credentials. The start command requires a successful build and available schema. `GET /health` checks liveness. `GET /ready` checks the application and database before routing traffic. See the [release runbook](../docs/DEPLOYMENT.md) for the deployment target and smoke checks.
 
-The API uses JWT (JSON Web Tokens) for authentication. Include the token in the Authorization header:
+Production source `935418c7916aea7e9f9405394d4e6f9af02d968c` was promoted on 2026-11-13 with all seven migrations applied. Archive, owner-inventory, and expense migrations ran through the verified-TLS direct owner connection; runtime expense DML grants and owner default privileges were verified. [Release evidence and remaining authenticated QA](../docs/DEPLOYMENT.md#release-2026-11-13). Roll back only to an archive-aware application once archived projects exist.
 
-```
-Authorization: Bearer <your-jwt-token>
-```
+## Access policy
 
-## Development Roadmap
-
-### Completed
-
-- ✅ Initial project setup
-
-### In Progress
-
-- 🔄 Database schema design with Prisma
-- 🔄 Basic server configuration
-
-### Upcoming
-
-- GraphQL schema definition
-- Authentication implementation
-- CRUD operations for all entities
-- Business logic implementation
-- API testing
-- Performance optimization
-
-## Deployment
-
-### Production Build
-
-```
-npm run build
-```
-
-### Deployment Options
-
-1. **Cloud Platforms**:
-   - Heroku
-   - DigitalOcean App Platform
-   - AWS Elastic Beanstalk
-   - Google Cloud Run
-
-2. **Container-based Deployment**:
-   - Docker container
-   - Kubernetes cluster
-
-3. **Traditional Hosting**:
-   - VPS with Node.js installed
-   - PM2 for process management
-
-### Production Considerations
-
-- Set `NODE_ENV=production` in your environment
-- Use a process manager like PM2
-- Consider using a reverse proxy like Nginx
-- Implement rate limiting and security headers
-- Set up database backups
+- GraphQL accepts JSON POST from the configured origin. A verified session is required for workspace operations.
+- Project owners can create, update, delete, invite, remove members, and publish or unpublish Showcase links. Owners can list, create, edit, and permanently delete tasks. Task deletion cascades to related assignments, dependency edges, and calendar entries.
+- Owners can archive and restore projects. Archived project content is read-only. Existing invitation acceptance, revocation, member removal, and unpublishing remain available.
+- Invitations bind a single-use link to the recipient's verified email. Links expire after seven days. Reissuing an invite revokes the previous link. Removing a member also revokes pending links for their email.
+- Members can read shared project fields and post private comments. Owner notes, budgets, invitation details, and the membership list remain private to the owner.
+- A current verified member can read and edit an assigned task on an active project. Owners control assignment and deletion. Membership removal clears assignments.
+- A Showcase URL exposes its explicit title, summary, publication time, and current project status to anyone with the link. Showcase links are unlisted. Unpublishing revokes the link, and republishing creates a new one.
+- Catalog items and project inventory requirements are owner-only. Archived projects retain readable requirements. Planned, in-progress, and on-hold projects contribute to shortfalls while unarchived.
+- Project creation and date updates reject an end before the effective start. Partial and cleared schedules are allowed. Date patches validate against stored endpoints under the project lock; unrelated edits preserve legacy reversed dates.
+- Dashboard totals and recent updates include only owned, unarchived projects. Upcoming task deadlines additionally exclude completed/cancelled parents and completed tasks. Shared readers cannot include another owner's projects in dashboard totals.
+- Schedule views and USD expense reports are owner-only. Archived projects retain readable reports. Task hours follow task edit authorization.

@@ -1,116 +1,67 @@
-# RepairVantage - Client
+# RepairVantage client
 
-RepairVantage is a comprehensive repair management system that helps track projects, tasks, parts inventory, and repair scheduling.
+React, Vite, React Router, Apollo Client, and Better Auth power the browser app.
 
-## Technologies
+## Local development
 
-- **React 18** - Frontend library
-- **TypeScript** - Type-safe JavaScript
-- **Vite** - Build tool and development server
-- **Apollo Client** - GraphQL client
-- **TailwindCSS with DaisyUI** - Styling and UI components
-- **React Router** - Client-side routing
-- **date-fns** - Date manipulation library
-- **Testing Library** - Component testing
+Use the Node version in the repository's `.nvmrc`. Start the Express server using the [repository runbook](../docs/ENGINEERING.md), then run these commands from `client/`.
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v16+)
-- npm or yarn
-
-### Installation
-
+```sh
+npm ci
+npm run dev -- --strictPort
 ```
-# Install dependencies
-npm install
 
-# Start development server
-npm run dev
+Open `http://localhost:5173`. Vite proxies `/api/auth` and `/graphql` to Express on loopback port 4000. The browser origin must match the server's configured origin for OAuth, cookies, and request validation.
 
-# Run tests
+## Project navigation
+
+Open an owned or shared project by clicking anywhere on its card, or focus the card with Tab and press Enter. Owners can edit the project details and save status and priority independently. Members can read these fields and comment.
+
+## Verification
+
+```sh
+npm run lint
+npm run build
+npx --no-install playwright install chromium
 npm test
-
-# Build for production
-npm run build
 ```
 
-## Project Structure
+The default Playwright suite uses intercepted HTTP responses. To exercise real cookie sessions, owner edits and priority persistence, invitation acceptance, comments, and Showcase publishing, start the [disposable browser-test server](../server/test/browser-server.cjs) with a migrated local test database. Run the opt-in suite against that server.
 
-```
-client/
-├── public/            # Static assets
-├── src/
-│   ├── components/    # Reusable UI components
-│   ├── context/       # React context providers
-│   ├── hooks/         # Custom React hooks
-│   ├── pages/         # Page components
-│   ├── services/      # API and service functions
-│   ├── types/         # TypeScript type definitions
-│   ├── utils/         # Utility functions
-│   ├── App.tsx        # Main application component
-│   └── main.tsx       # Application entry point
-├── .eslintrc.js       # ESLint configuration
-├── tsconfig.json      # TypeScript configuration
-└── vite.config.ts     # Vite configuration
+```sh
+REAL_API=1 npm test -- tests/projects.full-stack.spec.ts
 ```
 
-## Development Roadmap
+Production hosting must route API requests to Express and serve the React entry point for browser routes. The app expects same-origin API requests.
 
-### Completed
+## Archived projects
 
-- ✅ Project setup with Vite, React, and TypeScript
-- ✅ Basic dependency configuration
-- ✅ Initial application structure
+Owners can archive or restore a project from its details page. An Archived badge appears on its card. Members can still read details and comments. The owner can revoke invitations, remove members, or unpublish Showcase while the project is archived.
 
-### In Progress
+To permanently delete an active project, select **Delete project permanently** and accept the confirmation naming the project. Deletion removes related work and sharing. Restore an archived project before deleting it.
 
-- 🔄 Frontend foundation with Apollo Client
-- 🔄 TailwindCSS with DaisyUI setup
-- 🔄 Basic layout and navigation components
+## Project tasks
 
-### Upcoming
+On Project Details, select **Show tasks**. Owners see all project tasks and can add, edit, delete, and assign them to existing project members. Choose **Unassigned** to clear an assignment. Members see only tasks assigned to them and can edit those tasks on active projects. To change status, drag a task to a column or open **Edit** and select a status with the keyboard or touch. The task deadline field uses your browser’s local time. The board is read-only while the project is archived.
 
-- Authentication UI
-- Project Management UI
-- Task Management UI
-- Parts and Tools Management UI
-- Calendar and Gantt Views
-- Reporting and Export
-- Testing and Refinement
+## Project reports
 
-## Deployment
+The real-API acceptance test covers email-code sign-in, expense persistence after reload, matching CSV totals and rows, spreadsheet formula protection, and print invocation. With the disposable browser-test server running, use `REAL_API=1 npm test -- tests/report.full-stack.spec.ts`.
 
-### Build for Production
+Enter estimated and actual time in decimal hours on a task. Owners can open the project report to see both time totals and record actual expenses in USD. Use **Download CSV** for spreadsheet data or **Print / Save as PDF**, then select your browser’s **Save as PDF** destination. Archived project reports remain readable.
 
-```
-npm run build
-```
+## Inventory
 
-This will create a `dist` directory with optimized production assets.
+Open **Inventory** in workspace navigation to add or edit parts and tools and their on-hand counts. Select **Show requirements** on an owned project to set or remove an item quantity. Required quantities replace the previous value. The inventory forecast sums planned, in-progress, and on-hold projects that are active. Archived requirements remain readable.
 
-### Deployment Options
+## Project schedule dates
 
-1. **Static Hosting Services**:
-   - Netlify
-   - Vercel
-   - GitHub Pages
-   - AWS S3 + CloudFront
+On active owned projects, select **Edit dates**. Enter optional **Project start (UTC)** and **Project end (UTC)** values. These times use UTC regardless of the browser timezone. **Save dates** updates only changed endpoints; clearing an endpoint removes it. The end cannot precede the start. Failed saves retain the draft; **Cancel** leaves stored dates intact. Members and archived projects show dates without editing controls.
 
-2. **Container-based Deployment**:
-   - Docker container with Nginx
-   - Kubernetes cluster
+Open **Schedule** and choose a range containing the project dates to see the project in the calendar or timeline. Unchanged endpoints retain their original seconds even though the editor displays minutes.
 
-3. **Manual Deployment**:
-   - Copy the `dist` directory to your web server
+## Portfolio-reference workspace
 
-## Environment Configuration
+The design branch `dev/portfolio-ui` restores the portfolio screenshot's indigo navigation, summary cards, dashboard panels, and light workspace. Open **Dashboard** at `/projects/dashboard`; sign-in destinations and the default project list remain unchanged. Project search and status filters operate on the account-scoped owned and shared lists.
 
-Create a `.env` file in the client root directory:
-
-```
-VITE_API_URL=http://localhost:4000/graphql
-```
-
-For production, set the correct API URL in your deployment environment.
+Dashboard totals exclude archived projects and shared projects. Active means Planned, In progress, or On hold. Upcoming deadlines are unfinished tasks in active projects over the next seven days, capped at five; dates use UTC. **Recent project updates** shows saved project timestamps, not a historical activity log. [Design reference](../docs/UI-REFERENCE.md).

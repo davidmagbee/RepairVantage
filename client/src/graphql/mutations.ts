@@ -1,49 +1,78 @@
 import { gql } from '@apollo/client';
-
-export const LOGIN_USER = gql`
-  mutation Login($input: LoginInput!) {
-    login(input: $input) {
-      token
-      user {
-        id
-        name
-        email
-        role
-        profilePicture
-      }
-    }
-  }
-`;
-
-export const REGISTER_USER = gql`
-  mutation Register($input: UserInput!) {
-    register(input: $input) {
-      token
-      user {
-        id
-        name
-        email
-        role
-        profilePicture
-      }
-    }
-  }
-`;
+import { COMMENT_FIELDS, PROJECT_FIELDS } from './queries';
 
 export const CREATE_PROJECT = gql`
   mutation CreateProject($input: ProjectInput!) {
     createProject(input: $input) {
+      ...ProjectFields
+    }
+  }
+  ${PROJECT_FIELDS}
+`;
+
+// Return each editor's own fields so a late response cannot overwrite another editor's cache entry.
+export const UPDATE_PROJECT_STATUS = gql`
+  mutation UpdateProjectStatus($id: ID!, $status: ProjectStatus!) {
+    updateProject(id: $id, input: { status: $status }) {
       id
-      name
-      description
-      startDate
-      endDate
       status
-      priority
-      notes
-      budget
     }
   }
 `;
 
-// Other mutations will be added as needed 
+export const UPDATE_PROJECT_PRIORITY = gql`
+  mutation UpdateProjectPriority($id: ID!, $priority: Priority!) {
+    updateProject(id: $id, input: { priority: $priority }) {
+      id
+      priority
+    }
+  }
+`;
+
+export const UPDATE_PROJECT_DETAILS = gql`
+  mutation UpdateProjectDetails($id: ID!, $input: ProjectUpdateInput!) {
+    updateProject(id: $id, input: $input) {
+      id
+      name
+      description
+    }
+  }
+`;
+
+// Keep date responses independent of the details, status, and priority editors' cache fields.
+export const UPDATE_PROJECT_DATES = gql`
+  mutation UpdateProjectDates($id: ID!, $input: ProjectUpdateInput!) {
+    updateProject(id: $id, input: $input) {
+      id
+      startDate
+      endDate
+    }
+  }
+`;
+
+export const ARCHIVE_PROJECT = gql`
+  mutation ArchiveProject($id: ID!) {
+    archiveProject(id: $id) { id archivedAt }
+  }
+`;
+
+export const RESTORE_PROJECT = gql`
+  mutation RestoreProject($id: ID!) {
+    restoreProject(id: $id) { id archivedAt }
+  }
+`;
+
+export const DELETE_PROJECT = gql`
+  mutation DeleteProject($id: ID!) {
+    deleteProject(id: $id)
+  }
+`;
+
+export const ADD_PROJECT_COMMENT = gql`
+  mutation AddProjectComment($projectId: ID!, $body: String!) {
+    addProjectComment(projectId: $projectId, body: $body) {
+      ...CommentFields
+    }
+  }
+  ${COMMENT_FIELDS}
+`;

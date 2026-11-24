@@ -1,30 +1,41 @@
-import { Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import ProjectList from './pages/ProjectList';
-import ProjectDetails from './pages/ProjectDetails';
-import Tasks from './pages/Tasks';
+import PrivateRoute, { GuestRoute } from './components/PrivateRoute';
+import AcceptInvitation from './pages/AcceptInvitation';
 import Inventory from './pages/Inventory';
-import Calendar from './pages/Calendar';
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import NewProject from './pages/NewProject';
 import NotFound from './pages/NotFound';
+import ProjectDetails from './pages/ProjectDetails';
+import ProjectList from './pages/ProjectList';
+import ProjectReport from './pages/ProjectReport';
+import Schedule from './pages/Schedule';
+import Showcase from './pages/Showcase';
 
-function App() {
+export default function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="projects" element={<ProjectList />} />
-          <Route path="projects/:id" element={<ProjectDetails />} />
-          <Route path="tasks" element={<Tasks />} />
+    <Routes>
+      <Route index element={<Landing />} />
+      <Route path="invite" element={<AcceptInvitation />} />
+      <Route path="showcase/:slug" element={<Showcase />} />
+      <Route element={<GuestRoute />}>
+        <Route path="login" element={<Login key="login" />} />
+        <Route path="register" element={<Login key="register" createAccount />} />
+      </Route>
+      <Route element={<PrivateRoute />}>
+        <Route path="projects" element={<Layout />}>
+          <Route index element={<ProjectList />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="new" element={<NewProject />} />
           <Route path="inventory" element={<Inventory />} />
-          <Route path="calendar" element={<Calendar />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path=":id" element={<ProjectDetails />} />
+          <Route path=":id/report" element={<ProjectReport />} />
         </Route>
-      </Routes>
-    </AuthProvider>
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
-
-export default App;

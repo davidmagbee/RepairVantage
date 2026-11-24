@@ -1,148 +1,43 @@
 # RepairVantage
 
-RepairVantage is a comprehensive repair management system designed to help businesses track repair projects, manage tasks, inventory parts and tools, and schedule repairs efficiently.
+RepairVantage gives repair project owners a private workspace for tracking status and sharing updates. A visitor can read the landing page and open an unlisted Showcase link. Workspace access requires Google or a verified email code.
 
-## Project Overview
+[Open RepairVantage](https://repairvantage.davidmagbee.com/)
 
-This project uses a modern tech stack with a Node.js/Express/GraphQL backend and a React/TypeScript frontend to create a full-featured repair management application.
+- **Owners** create projects, edit details, status, priority, and UTC schedule dates, invite people, and manage Showcase links.
+- **Invited members** can read shared project details and add comments. Owners control access.
+- **Showcase visitors** see the separately published title, summary, and current status. Comments and internal fields stay in the workspace.
 
-## Repository Structure
+Click anywhere on an owned or shared project card to open its details. Keyboard users can focus the card and press Enter.
 
-```
-repairvantage/
-├── client/            # Frontend React application
-│   ├── public/        # Static assets
-│   ├── src/           # React source code
-│   └── ...            # Configuration files
-├── server/            # Backend Node.js application
-│   ├── prisma/        # Database schema and migrations
-│   ├── src/           # Server source code
-│   └── ...            # Configuration files
-├── .cursorrules       # Project development rules
-└── README.md          # This file
-```
+## Project status
 
-## Technology Stack
+**Live release · 2026-11-13.** The owner workspace includes archive and restore, confirmed deletion, a task board with member assignment, owner inventory with stock shortfalls, UTC project-date editing and scheduling views, and USD expense/hour reports with CSV export and printing. [Release `935418c`](docs/DEPLOYMENT.md#release-2026-11-13) is deployed at the canonical URL. The owner confirmed the unchanged production sign-in and account-linking flows; new feature walkthroughs remain owner QA. The [roadmap](docs/ROADMAP.md) tracks those checks and remaining dependency, calendar-event, conflict, reporting, and UX work. The [implementation guide](docs/IMPLEMENTATION.md) translates the original [Cursor plan](.cursorrules) into acceptance criteria.
 
-### Frontend
-- **React 18** with TypeScript
-- **Vite** for fast development and building
-- **Apollo Client** for GraphQL integration
-- **TailwindCSS** with DaisyUI for styling
-- **React Router** for client-side routing
-- **Testing Library** for component testing
+The portfolio-reference UI merged through [PR #3](https://github.com/davidmagbee/RepairVantage/pull/3) into `dev/engineering-harness`; it is not deployed. `main` is still the prototype until the [one-time consolidation](docs/BRANCH-CONSOLIDATION.md). Start a new chat from the [current handoff](docs/HANDOFF.md); see [privacy/commercial readiness](docs/PRIVACY-READINESS.md) for the six-claim audit and owner inputs. [Design reference](docs/UI-REFERENCE.md).
 
-### Backend
-- **Node.js** with Express
-- **Apollo Server** for GraphQL API
-- **Prisma ORM** for database access
-- **PostgreSQL** database
-- **JWT** authentication
-- **TypeScript** for type safety
+The frontend is React and Vite. The same-origin backend is Express, Apollo GraphQL, Better Auth, Prisma 7, and PostgreSQL.
 
-## Getting Started
+## Develop
 
-### Prerequisites
-- Node.js (v16+)
-- npm or yarn
-- PostgreSQL database
+Use the version in [`.nvmrc`](.nvmrc) and a disposable local PostgreSQL database. Configure the ignored `server/.env` using the [server setup](server/README.md), then install and migrate from the repository root.
 
-### Installation
-
-1. Clone the repository:
-```
-git clone https://github.com/yourusername/repairvantage.git
-cd repairvantage
+```sh
+npm ci --prefix client
+npm ci --prefix server
+npm --prefix server run prisma:deploy
 ```
 
-2. Install dependencies for both client and server:
-```
-# Install client dependencies
-cd client
-npm install
+Start the server and client in separate terminals.
 
-# Install server dependencies
-cd ../server
-npm install
+```sh
+npm --prefix server run dev
+npm --prefix client run dev
 ```
 
-3. Set up environment variables:
-   - Create `.env` file in the server directory
-   - Create `.env` file in the client directory
+Open `http://localhost:5173`. The dev server proxies GraphQL and authentication to the local Express process. Keep that hostname for both the browser and Google callback configuration.
 
-4. Set up the database:
-```
-cd server
-npx prisma migrate dev
-```
-
-5. Start the development servers:
-```
-# In server directory
-npm run dev
-
-# In client directory (in a separate terminal)
-cd ../client
-npm run dev
-```
-
-## Development Roadmap
-
-### Completed
-- ✅ Project setup and initialization
-- ✅ Basic project structure
-- ✅ Frontend foundation with Vite and React
-- ✅ Development environment configuration
-
-### In Progress
-- 🔄 Frontend UI foundation with TailwindCSS and DaisyUI
-- 🔄 Database schema design with Prisma
-- 🔄 Basic server configuration
-- 🔄 GraphQL schema definition
-
-### Upcoming
-1. Authentication System
-   - Backend JWT implementation
-   - Frontend login/registration UI
-   - Protected routes
-
-2. Project Management
-   - Project CRUD operations
-   - Project listing and details views
-   - Project assignment
-
-3. Task Management
-   - Task CRUD operations
-   - Task status workflow
-   - Drag-and-drop task board
-
-4. Parts and Tools Inventory
-   - Inventory management
-   - Parts assignment to projects
-   - Inventory forecasting
-
-5. Calendar and Scheduling
-   - Calendar view implementation
-   - Gantt chart for project timelines
-   - Resource allocation
-
-6. Reporting
-   - Cost tracking
-   - Time analysis
-   - Export functionality (PDF, CSV)
-
-7. Testing and Refinement
-   - Unit and integration testing
-   - Performance optimization
-   - UI/UX polish
-
-## Contributing
-
-1. Follow the development process guidelines in `.cursorrules`
-2. Maintain the established project structure
-3. Write tests for new features
-4. Document all public functions and components
-
-## License
-
-[MIT License](LICENSE)
+- [Engineering runbook and verification](docs/ENGINEERING.md)
+- [Deployment and release gates](docs/DEPLOYMENT.md)
+- [Opt-in demonstration projects](docs/DEMO.md)
+- [Project skill installation and provenance](docs/agents/SKILLS.md)

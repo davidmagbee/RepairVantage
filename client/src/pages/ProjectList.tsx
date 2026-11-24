@@ -1,181 +1,117 @@
-import React, { useState } from 'react';
+import { useQuery } from '@apollo/client';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { privateOperation } from '../graphql/client';
+import { GET_PROJECTS } from '../graphql/queries';
+import type { Project } from '../graphql/queries';
 
-// Sample project data
-const mockProjects = [
-  { 
-    id: '1', 
-    name: 'Kitchen Renovation', 
-    status: 'In Progress', 
-    progress: 45, 
-    dueDate: '2023-08-30',
-    client: 'John Smith',
-    budget: 15000
-  },
-  { 
-    id: '2', 
-    name: 'Bathroom Remodel', 
-    status: 'Planning', 
-    progress: 15, 
-    dueDate: '2023-09-15',
-    client: 'Sarah Johnson',
-    budget: 8500
-  },
-  { 
-    id: '3', 
-    name: 'Deck Repair', 
-    status: 'In Progress', 
-    progress: 60, 
-    dueDate: '2023-07-25',
-    client: 'Michael Brown',
-    budget: 4200
-  },
-  { 
-    id: '4', 
-    name: 'Basement Finishing', 
-    status: 'Not Started', 
-    progress: 0, 
-    dueDate: '2023-10-10',
-    client: 'Jessica Davis',
-    budget: 22000
-  },
-  { 
-    id: '5', 
-    name: 'Roof Replacement', 
-    status: 'Completed', 
-    progress: 100, 
-    dueDate: '2023-06-15',
-    client: 'Robert Wilson',
-    budget: 12800
-  }
-];
+const statuses = ['PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
+const label = (value: string) => value.toLowerCase().replace(/_/g, ' ');
 
-const statusColors: Record<string, string> = {
-  'In Progress': 'badge-primary',
-  'Planning': 'badge-secondary',
-  'Not Started': 'badge-warning',
-  'Completed': 'badge-success',
-  'On Hold': 'badge-error'
-};
-
-const ProjectList = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('All');
-  
-  const filteredProjects = mockProjects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          project.client.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filter === 'All' || project.status === filter;
-    return matchesSearch && matchesFilter;
-  });
-  
+function ProjectCards({ projects }: { projects: Project[] }) {
   return (
-    <div className="p-6 space-y-8 animate-fadein">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <p className="text-gray-500">Manage and track all your renovation projects</p>
-        </div>
-        <div className="mt-4 md:mt-0">
-          <Link to="/projects/new" className="btn btn-primary btn-animate">
-            <i className="fa-solid fa-plus mr-2"></i> Create Project
-          </Link>
-        </div>
-      </header>
-      
-      {/* Filter and search */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-base-100 p-4 rounded-lg shadow-md">
-        <div className="flex flex-wrap gap-2">
-          <button 
-            onClick={() => setFilter('All')} 
-            className={`btn btn-sm ${filter === 'All' ? 'btn-primary' : 'btn-ghost'}`}
-          >All</button>
-          <button 
-            onClick={() => setFilter('In Progress')} 
-            className={`btn btn-sm ${filter === 'In Progress' ? 'btn-primary' : 'btn-ghost'}`}
-          >In Progress</button>
-          <button 
-            onClick={() => setFilter('Planning')} 
-            className={`btn btn-sm ${filter === 'Planning' ? 'btn-primary' : 'btn-ghost'}`}
-          >Planning</button>
-          <button 
-            onClick={() => setFilter('Completed')} 
-            className={`btn btn-sm ${filter === 'Completed' ? 'btn-primary' : 'btn-ghost'}`}
-          >Completed</button>
-        </div>
-        <div className="form-control w-full md:w-auto">
-          <div className="input-group">
-            <input 
-              type="text" 
-              placeholder="Search projects..." 
-              className="input input-bordered" 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button className="btn btn-square">
-              <i className="fa-solid fa-search"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Projects grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProjects.map(project => (
-          <Link to={`/projects/${project.id}`} key={project.id} className="card bg-base-100 shadow-lg hover:shadow-xl transition-all">
-            <div className="card-body">
-              <div className="flex justify-between items-start">
-                <h2 className="card-title">{project.name}</h2>
-                <span className={`badge ${statusColors[project.status]}`}>{project.status}</span>
-              </div>
-              
-              <p className="text-sm text-gray-500">Client: {project.client}</p>
-              
-              <div className="mt-2">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Progress</span>
-                  <span>{project.progress}%</span>
-                </div>
-                <progress 
-                  className="progress progress-primary w-full" 
-                  value={project.progress} 
-                  max="100"
-                ></progress>
-              </div>
-              
-              <div className="flex justify-between mt-4 text-sm">
-                <div className="flex items-center">
-                  <i className="fa-solid fa-calendar-day mr-2 text-primary"></i>
-                  <span>{new Date(project.dueDate).toLocaleDateString()}</span>
-                </div>
-                <div>
-                  <span className="font-semibold">${project.budget.toLocaleString()}</span>
-                </div>
-              </div>
-              
-              <div className="card-actions justify-end mt-4">
-                <button className="btn btn-sm btn-primary">View Details</button>
-              </div>
+    <ul className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      {projects.map((project) => (
+        <li className={`card project-card bg-base-100 ${project.archivedAt ? 'project-card--archived' : ''}`} key={project.id}>
+          {/* A single link spans the card, including its padding, with the project title as its accessible name. */}
+          <Link
+            className="card-body group rounded-[inherit] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            to={`/projects/${project.id}`}
+            aria-label={project.name}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <span className="project-card__symbol" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 6a4 4 0 0 0-5 5l-6 6a2 2 0 0 0 4 4l6-6a4 4 0 0 0 5-5l-3 3-3-3 3-3Z" />
+                </svg>
+              </span>
+              <span className={`badge project-status project-status--${project.status.toLowerCase()} capitalize`}>{label(project.status)}</span>
+            </div>
+            <h3 className="card-title break-words group-hover:underline group-focus-visible:underline">{project.name}</h3>
+            <p className="line-clamp-3 break-words text-sm text-base-content/70">{project.description || 'Add a description to outline the repair.'}</p>
+            <div className="project-card__footer flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs capitalize text-base-content/70">{label(project.priority)} priority</span>
+              {project.archivedAt ? <span className="badge badge-neutral">Archived</span> : <span className="text-sm font-semibold text-primary" aria-hidden="true">View project <span className="ml-1">→</span></span>}
             </div>
           </Link>
-        ))}
-      </div>
-      
-      {filteredProjects.length === 0 && (
-        <div className="bg-base-100 p-8 text-center rounded-lg shadow">
-          <i className="fa-solid fa-folder-open text-5xl text-gray-300 mb-4"></i>
-          <h3 className="text-xl font-bold">No projects found</h3>
-          <p className="text-gray-500">Try adjusting your search or filter criteria</p>
-          <button 
-            className="btn btn-primary mt-4"
-            onClick={() => {setSearchTerm(''); setFilter('All');}}
-          >
-            Clear Filters
-          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function ProjectList() {
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const { data, loading, error, refetch } = useQuery<{ projects: Project[]; sharedProjects: Project[] }>(GET_PROJECTS, {
+    context: privateOperation,
+    fetchPolicy: 'network-only',
+  });
+  // Filter only the account-scoped records already returned by the API; shared access stays separate.
+  const matches = (project: Project) => (!status || project.status === status)
+    && `${project.name} ${project.description ?? ''}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase());
+  const owned = data?.projects.filter(matches) ?? [];
+  const shared = data?.sharedProjects.filter(matches) ?? [];
+  const hasProjects = Boolean(data && data.projects.length + data.sharedProjects.length);
+
+  return (
+    <section className="space-y-7">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="eyebrow">Your workspace</p>
+          <h1 className="text-3xl font-bold">Projects</h1>
+          <p className="dashboard-subtitle">A clear view of every repair, from planning to completion.</p>
+        </div>
+        <Link className="btn btn-primary" to="/projects/new"><span aria-hidden="true">＋</span> Create project</Link>
+      </header>
+
+      {loading && <p role="status">Loading projects…</p>}
+      {error && (
+        <div className="space-y-3">
+          <p className="alert alert-error" role="alert">Could not load projects.</p>
+          <button className="btn btn-outline" onClick={() => { void refetch().catch(() => {}); }}>Try again</button>
         </div>
       )}
-    </div>
-  );
-};
 
-export default ProjectList; 
+      {hasProjects && (
+        <div className="workspace-panel flex flex-wrap items-end gap-4 p-5">
+          <label className="form-control min-w-0 flex-1 gap-2">
+            <span className="text-sm font-semibold">Search projects</span>
+            <input className="input input-bordered w-full" type="search" placeholder="Search by name or description…" value={search} onChange={event => setSearch(event.target.value)} />
+          </label>
+          <label className="form-control gap-2">
+            <span className="text-sm font-semibold">Filter by status</span>
+            <select className="select select-bordered capitalize" value={status} onChange={event => setStatus(event.target.value)}>
+              <option value="">All statuses</option>
+              {statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}
+            </select>
+          </label>
+          {(search || status) && <button type="button" className="btn btn-ghost" onClick={() => { setSearch(''); setStatus(''); }}>Clear filters</button>}
+        </div>
+      )}
+
+      {data && !hasProjects && (
+        <div className="workspace-panel">
+          <div className="card-body py-12 text-center">
+            <h2 className="card-title justify-center">No projects yet</h2>
+            <p>Create your first repair project to start tracking its status.</p>
+          </div>
+        </div>
+      )}
+      {hasProjects && owned.length === 0 && shared.length === 0 && <p role="status">No projects match your filters.</p>}
+
+      {owned.length > 0 && (
+        <section aria-labelledby="owned-projects" className="space-y-4">
+          <h2 className="panel-heading" id="owned-projects">Owned projects <span className="badge badge-primary badge-outline ml-2">{owned.length}</span></h2>
+          <ProjectCards projects={owned} />
+        </section>
+      )}
+      {shared.length > 0 && (
+        <section aria-labelledby="shared-projects" className="space-y-4">
+          <h2 className="panel-heading" id="shared-projects">Shared with you <span className="badge badge-primary badge-outline ml-2">{shared.length}</span></h2>
+          <ProjectCards projects={shared} />
+        </section>
+      )}
+    </section>
+  );
+}
