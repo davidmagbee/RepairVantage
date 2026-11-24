@@ -40,6 +40,9 @@
   },
   "overrides": {
     "proxy-addr": "2.0.8",
-    "@protobufjs/utf8": "1.1.2"
+    "@protobufjs/utf8": "1.1.2",
+    "@prisma/config": {
+      "effect": "3.22.1"
+    }
   }
 }

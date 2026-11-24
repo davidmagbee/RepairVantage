@@ -20,7 +20,7 @@ The [original Cursor plan](../.cursorrules) supplies the feature inventory. The 
 
 ## Immediate direction
 
-**Fact:** current integration contains the feature branches; `main` still lacks them. Follow the [main-consolidation and pruning plan](BRANCH-CONSOLIDATION.md) before starting future branches from `main`. Keep UI deployment separate from source consolidation. [Fresh-chat handoff](HANDOFF.md).
+**Fact:** [PR #5](https://github.com/davidmagbee/RepairVantage/pull/5) consolidated integration into `main` at `ca8fe43` with a merge commit. Future feature PRs target `main`; prune retired branches only after current main CI and containment/worktree/PR checks. UI release is held for the scoped Effect dependency fix and its checks. [Fresh-chat handoff](HANDOFF.md).
 
 **Owner scope · 2026-11-24:** general audience, not child-directed; US-only launch; proposed minimum account age 18. Eligibility enforcement is planned, not implemented. Next readiness work defines that workflow across OTP/Google and settles the unknown legal operator/contact, privacy notice, actual retention/deletion process and under-age report handling. DMCA-specific work is deferred per owner direction. The [readiness audit](PRIVACY-READINESS.md) found no implemented external fonts, replay, marketing sender or subscription checkout to repair; it is not legal clearance.
 

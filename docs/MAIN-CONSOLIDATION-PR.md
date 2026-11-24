@@ -1,3 +1,5 @@
+<!-- Historical body: consolidation completed through PR #5 on 2026-11-24 at ca8fe43. Do not create a duplicate PR. -->
+
 ## Change
 
 Make `main` the current development source of truth by merging the reviewed `dev/engineering-harness` history with a merge commit. This brings verified-session projects, sharing/Showcase, archive/tasks/assignment, owner inventory, UTC scheduling/date editing, USD reporting/export, and the portfolio-reference UI into the branch already designated as default.
