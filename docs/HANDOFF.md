@@ -6,7 +6,15 @@ Updated 2026-11-24 for owner audience/eligibility decisions; production observat
 
 **Fact** means observed source/provider state, a recorded check, or an explicitly attributed owner report. **Inference** means a recommendation/interpretation. **Unknown** means not verified. Do not convert historical passes or user-reported acceptance into newly executed tests.
 
-## Current source and production
+## Execution update · 2026-11-24
+
+**Fact:** [PR #5](https://github.com/davidmagbee/RepairVantage/pull/5) consolidated integration `5b513d9` into `main` at `ca8fe43` with a merge commit after PR Verify passed and independent source review. Future feature PRs target updated `main`. Main CI/pruning are separate checks; do not recreate the consolidation PR.
+
+**Fact:** the fresh local baseline passed 48 Node and 71 Chromium tests, 99.03% lines and 96.82% branches (`coverage/run-YouhOV/report/`), lint/build and desktop/mobile checks on the immutable package. Captures used synthetic responses, not production accounts. A runtime audit found one Effect advisory reported through three high-severity dependency paths. The `dev/runtime-audit-fix` slice pins patched Effect 3.22.1 only under `@prisma/config`; UI promotion is held until its checks complete. Existing production remains the recorded `935418c` release at this checkpoint.
+
+**Owner direction:** existing accounts must explicitly acknowledge the current 18+ rule; do not backfill acceptance from verified email or the owner's familiarity with users. Acknowledgment is a self-declaration with server timestamp/version, not verified age. US-only describes the intended launch market; geographic restrictions require a separate, documented decision. Record expansion steps with the eligibility slice.
+
+## Historical source and production snapshot · 2026-11-18
 
 - **Fact:** [PR #3](https://github.com/davidmagbee/RepairVantage/pull/3) merged into `dev/engineering-harness` on 2026-11-18 at `5d46f844a23f8d9e536853eca1498947fd6ff892`. Its tree equals UI head `039ae0b`. [Verify passed](https://github.com/davidmagbee/RepairVantage/actions/runs/43487681054).
 - **Fact:** `origin/main` is still the original prototype `bd46f74`; GitHub already designates it as default. At the `5d46f84` snapshot it is 38 commits behind integration, with no unique commits. Portfolio `039ae0b` and report `fe17d2f` are both contained in integration, not in `main`.
@@ -35,9 +43,9 @@ Updated 2026-11-24 for owner audience/eligibility decisions; production observat
 
 ## Next actions, in order
 
-1. **Recommendation:** review/merge this handoff PR into integration first. Follow [the consolidation plan](BRANCH-CONSOLIDATION.md), then use [the prepared main PR body](MAIN-CONSOLIDATION-PR.md). Merge integration → `main` with a merge commit after current checks/review. Do not separately merge already-contained feature branches. This request prepared the plan; it did not execute main consolidation or pruning.
-2. **Recommendation:** make updated `main` the starting point for future `dev/<feature>` branches. Retire integration and feature branches only after every latest local/remote tip is contained in `origin/main`, with clean worktree/open-PR checks and race-safe remote deletion. Recompute SHAs at execution time.
-3. **Recommendation:** review the merged UI and new feature workflows. Release the UI as a separate action from an exact reviewed commit using [the deployment runbook](DEPLOYMENT.md). Git consolidation does not deploy it.
+1. **Recommendation:** finish the scoped runtime dependency patch and current checks before UI promotion. Consolidation PR #5 is already merged; future branches start from updated `main`.
+2. **Recommendation:** retire integration and feature branches only after current `main` CI passes and every latest local/remote tip is contained in `origin/main`, with clean worktree/open-PR checks and race-safe remote deletion. Recompute SHAs at execution time.
+3. **Recommendation:** promote the reviewed UI as a separate release after dependency checks, using [the deployment runbook](DEPLOYMENT.md). Local workflow/visual checks passed; owner production feature acceptance remains distinct.
 4. **Recommendation:** follow the general-audience, US-only / 18+ scope in [privacy/commercial readiness](PRIVACY-READINESS.md). Define the eligibility workflow and resolve operator/contact, actual retention/deletion facts and privacy-notice content before implementing policy-dependent behavior. Include server enforcement across OTP/Google and under-age report handling. DMCA-specific work is deferred per owner direction. No replay-consent, marketing unsubscribe or renewal UI fix was justified by the inspected implementation.
 5. **Unknown product rules:** define first task-dependency type, who edits edges, what completion/reopening does, and whether prerequisites warn or block. Then implement one same-project edge slice with self/cross-project/cycle rejection and concurrent-write tests under the existing locking model. Independent calendar events, resource conflicts/reservations, report search/filtering, task-level inventory and further UX remain later slices. Do not silently select their persisted semantics.
 
@@ -60,10 +68,11 @@ Verify current Git/PR/provider state before relying on snapshot SHAs.
 OTP/Google/linking are owner-confirmed for the unchanged implementation.
 Owner scope: general audience, US-only launch, 18+ account eligibility.
 Eligibility is planned, not implemented; DMCA-specific work is deferred.
-PR #3 is merged; distinguish merged source from the deployed 935418c release.
-Start with the documented main-consolidation sequence when that action is
-in the user's authorized scope. Do not infer deployment or branch-deletion
-permission solely from this handoff. Preserve owner privacy, real dashboard
+PR #5 consolidated main; do not reopen that consolidation. Verify the
+runtime dependency fix, release and cleanup state before continuing.
+Require existing-account acknowledgment; verified email is not age proof.
+Do not infer deployment or branch-deletion permission solely from this
+handoff. Preserve owner privacy, real dashboard
 data and the portfolio design. Next product work needs dependency semantics
 settled before implementation. Include docs, meaningful checks, dev-review,
 semantic commit, staging groups, PR body/delta and manual QA in each slice.

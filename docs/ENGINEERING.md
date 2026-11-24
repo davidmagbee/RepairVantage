@@ -32,7 +32,11 @@ Before every push, review the full commit range being published. Verify affected
 
 ## Branch direction
 
-The [consolidation plan](BRANCH-CONSOLIDATION.md) records the transition from the legacy integration branch to `main`. Until that reviewed merge occurs, the old `main` is not the current application baseline. After consolidation, create short-lived `dev/<feature>` branches from fast-forwarded `main`, target PRs at `main`, and keep production promotion separate. Before pruning, prove containment of each latest local/remote tip and check worktrees/open PRs. The [fresh-chat handoff](HANDOFF.md) records current source, deployed source, evidence and next action.
+The [consolidation](BRANCH-CONSOLIDATION.md) completed through PR #5 at `ca8fe43`. Create short-lived `dev/<feature>` branches from fast-forwarded `main`, target PRs at `main`, and keep production promotion separate. Before pruning, prove containment of each latest local/remote tip and check worktrees/open PRs. The [fresh-chat handoff](HANDOFF.md) records current source, deployed source, evidence and next action.
+
+## Dependency exception · Effect
+
+The server scopes an `effect: 3.22.1` override to `@prisma/config`: Prisma 7.10.1 otherwise pins Effect 3.20.0, affected by [GHSA-7589-6fvf-x4pw](https://github.com/Effect-TS/effect/security/advisories/GHSA-7589-6fvf-x4pw). The advisory concerns pathological `Schema.TemplateLiteral` matching. No application endpoint using that matcher was established, but the production dependency audit reported the root flaw and two affected dependency paths as three high entries. Retain the narrow override until the upstream Prisma configuration dependency resolves a patched Effect version without it; recheck the lock, Prisma generation/build and runtime audit when removing it. Do not use a forced major-version audit fix.
 
 ## Local checks
 

@@ -1,5 +1,11 @@
 # Consolidate development into `main`
 
+## Execution update · 2026-11-24
+
+**Fact:** [PR #5](https://github.com/davidmagbee/RepairVantage/pull/5) merged integration `5b513d9` into `main` at `ca8fe43cff0bf9167d48c4e98b398dc037732b5a`, preserving ancestry. PR Verify passed and independent source review found no consolidation blocker. A fresh local run passed 48 Node and 71 Chromium tests (99.03% lines, 96.82% branches), lint/build and built-package desktop/mobile checks. The resulting `main` CI must pass before pruning. The commands below preserve the original plan for reference; **do not open another consolidation PR**. Future PRs target `main`.
+
+**Fact:** Vercel still had no Git link at the execution recheck. UI production promotion is held pending a scoped Effect dependency patch; merging source did not deploy or apply migrations. The earlier baseline below is historical, not the current branch state.
+
 ## Verified baseline · 2026-11-18
 
 **Fact** · GitHub's default branch is already `main`, at `bd46f74`. [PR #3](https://github.com/davidmagbee/RepairVantage/pull/3) merged the portfolio UI into `dev/engineering-harness` at `5d46f844a23f8d9e536853eca1498947fd6ff892`. That integration commit has the same tree as UI branch tip `039ae0b`; `main` is its ancestor and lacks 38 integration commits. Subsequent documentation merges will increase that count.
@@ -27,7 +33,7 @@ flowchart LR
 
 For a single-maintainer repository, require a PR and the passing Verify check if branch rules are introduced. Avoid a mandatory external approval that the maintainer cannot supply. Branch-rule changes are a separate decision; no rule settings were changed here.
 
-## Merge order · requires explicit authorization
+## Original merge order · completed through PR #5
 
 1. Finish and review the handoff documentation on `dev/handoff-main-consolidation`. Open its PR into `dev/engineering-harness`; wait for Verify and merge it with **Create a merge commit**. This brings the current handoff and this plan into the integration history before consolidation.
 2. Fetch remote state. Recheck deployment triggers and inspect the full integration-to-`main` range. Open the consolidation PR from `dev/engineering-harness` into `main`; use the [prepared PR body](MAIN-CONSOLIDATION-PR.md).
