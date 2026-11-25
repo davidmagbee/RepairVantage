@@ -46,7 +46,9 @@ For an explicitly authorized demonstration account, use the [opt-in legacy proje
 
 Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefix server run prisma:deploy` as a release step. Prisma 7 loads [`prisma.config.ts`](prisma.config.ts) for CLI commands. Client generation and builds run without database credentials. The start command requires a successful build and available schema. `GET /health` checks liveness. `GET /ready` checks the application and database before routing traffic. See the [release runbook](../docs/DEPLOYMENT.md) for the deployment target and smoke checks.
 
-Production eligibility source `ce17774` (same tree as main merge `f1cc1d0`) was promoted on 2026-11-25 with all nine migrations applied. Both additive eligibility migrations ran through the verified direct owner connection; acknowledgment SELECT/INSERT/UPDATE and User restriction SELECT/UPDATE privileges were verified for repairvantage_app. [Release evidence](../docs/DEPLOYMENT.md). Rollbacks must preserve every deployed access restriction, including archive policy and, once deployed, eligibility holds.
+Production source `c970593` (PR #9 merge, same tree as tested head `fe3b87d`) was promoted on 2026-11-25 with local-time scheduling/layout and the repair-tools favicon. No migrations, account/project mutations or auth/provider configuration changes were performed. Automated release checks were anonymous/signed out; no OTP request, fixture account or hold was submitted. [Release evidence](../docs/DEPLOYMENT.md#release-2026-11-25--local-time-layout-and-favicon).
+
+The earlier eligibility release `ce17774` applied both additive eligibility migrations through the verified direct owner connection, bringing production to nine applied migrations. Acknowledgment SELECT/INSERT/UPDATE and User restriction SELECT/UPDATE privileges were verified for repairvantage_app then. Rollbacks must preserve every deployed access restriction, including archive policy and eligibility holds; the previous eligibility deployment remains a compatible rollback target.
 
 ## Access policy
 
@@ -64,7 +66,7 @@ Production eligibility source `ce17774` (same tree as main merge `f1cc1d0`) was 
 
 ## Schedule time-zone contract
 
-The current development branch adds optional `timeZone: String` to `schedule(from: DateTime!, to: DateTime!, timeZone: String)`. This API change is not deployed yet. Endpoints remain UTC instants and the query interval is `[from, to)`. With `timeZone` omitted or null, the existing positive, at-most-93-elapsed-day contract is unchanged.
+`schedule(from: DateTime!, to: DateTime!, timeZone: String)` accepts an optional time-zone argument. Endpoints remain UTC instants and the query interval is `[from, to)`. With `timeZone` omitted or null, the existing positive, at-most-93-elapsed-day contract is unchanged.
 
 When supplied, the zone must be accepted by `Intl.DateTimeFormat`. The interval must be positive and span no more than 93 local calendar dates, counting the dates of `from` and `to - 1ms` inclusively. This permits a 93-date autumn range with an extra elapsed hour and handles local days whose clocks skip midnight. It does not require endpoints to be midnight. Invalid zones and 94-date ranges return `BAD_USER_INPUT`. Authentication, owner scoping, archived-project exclusion and overlap semantics are unchanged. [Resolver](src/graphql/resolvers/schedule.ts) · [API tests](test/schedule.test.cjs).
 

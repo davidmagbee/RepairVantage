@@ -77,6 +77,26 @@ Production verification:
 
 The new runtime enforces eligibility on existing sessions. **Old deployments `472cd93` / `dpl_8V69mRY95LqEm3pi4GmgEMt3DixZ` and earlier ignore those holds and are no longer safe rollback targets once live holds/acknowledgments exist.** Recover with an eligibility-aware, archive-aware build. The database migrations are additive; do not drop audit records or restriction state as a routine rollback.
 
+## Release 2026-11-25 · local time, layout and favicon
+
+The owner authorized deployment after merging [PR #9](https://github.com/davidmagbee/RepairVantage/pull/9). Exact merged source [`c970593327df66edd500f885b8c2b27be9f24435`](https://github.com/davidmagbee/RepairVantage/commit/c970593327df66edd500f885b8c2b27be9f24435) was packaged; it has the same tree `8aad51872330b6bc3ffa86aa120a14cf445808cb` as reviewed PR head `fe3b87d9b5ed8fefc1b2b652af43e8b8895973ce`. [PR-head Verify](https://github.com/davidmagbee/RepairVantage/actions/runs/45668078312) and [merged-main Verify](https://github.com/davidmagbee/RepairVantage/actions/runs/45668909913) passed; main completed at 17:53:41 UTC. Its logs confirm 52 Node + 92 Chromium tests with 99.02% lines / 96.93% branches. Fresh client/server runtime audits returned zero vulnerabilities.
+
+This release adds selected-zone date editing/display, a DST-aware optional Schedule argument, the responsive Project Details overview and a local SVG favicon. No migrations, account/project mutations or auth/provider configuration changes were performed. All nine migrations had already been applied and privileges verified by the earlier eligibility release; no schema conversion or acceptance backfill was needed. Runtime auth/security bookkeeping was not audited for incidental writes.
+
+Production deployment `dpl_B82wkdTojJibZQ5PW71Ev7AarjCh` was staged at [its protected deployment URL](https://repairvantage-gvesm5ttj-davidmagbees-projects.vercel.app). Readiness, provider discovery, nested Schedule HTML, and favicon checks passed before promotion. Following successful main CI, promotion was requested at 17:54:16 UTC (12:54:16 Eastern) on 2026-11-25. After alias propagation, [the canonical origin](https://repairvantage.davidmagbee.com) resolved to that ready deployment. Canonical HTML, `index-s5vrD5tl.js`, `index-CdgCCkDM.css` and `/favicon.svg` returned 200 and were byte-equal to the reviewed package. The 1,122-byte favicon SHA-256 is `ddd8d1b4d656750ba5401390600c29ad259ad02d20129bbae0c934a1b287032e`. Release identity is established by the reviewed archive/tree and byte checks.
+
+Canonical verification:
+
+- `/health` reported healthy; `/ready` reported ready. Provider discovery advertised Google and email OTP. Availability does not establish provider completion or account linking.
+- Public `/privacy`, `/login` and `/projects/schedule` returned the new HTML shell. Browser inspection of `/login` showed Sign in, the privacy link, age-in-years form and Continue control, with `/favicon.svg` linked and no browser error logs.
+- Eligibility status returned policy `adult-2026-11-24`, minimum age 18, with the anonymous context unscreened, unblocked and unacknowledged. Signed-out GraphQL `me` returned `UNAUTHENTICATED` with no private data.
+- The favicon returned `image/svg+xml` with `nosniff` and the expected content-security policy. Canonical HTML/JS/CSS/favicon bytes matched the package.
+- A deployment-scoped error/fatal log query over the preceding 15 minutes returned no matching groups. This is a bounded observation, not proof of no errors.
+
+Automated release checks were anonymous/signed out. No OTP email was requested, Google consent initiated, age declaration/hold submitted, fixture account created or account/project mutation performed. Authenticated owner timezone/layout acceptance and the earlier eligibility release's hosted OTP/Google/linking/existing-session walkthrough remain outstanding. Synthetic captures and local/API tests do not substitute for those checks. The client build's large entry-chunk warning remains documented in [Engineering](ENGINEERING.md#time-zone-and-project-details-slice).
+
+Previous eligibility deployment `dpl_CjSsbytY3cPDrYS8yKQjZAgVJCze` remains an eligibility-aware, archive-aware rollback target. Older UI-only deployments remain unsafe once holds/acknowledgments exist. No branch was pruned by this release.
+
 ## Release QA
 
 - Request `/`, `/health`, and `/ready`. Open and refresh a nested client route. Confirm GraphQL and auth paths receive API responses.
