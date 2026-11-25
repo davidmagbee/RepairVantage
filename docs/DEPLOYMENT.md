@@ -24,7 +24,7 @@ Google sign-in requires a verified Gmail or Workspace mailbox. Other addresses c
 1. Verify the reviewed commit locally or in CI. Check the server and client runtime audit results. Apply migrations using `DIRECT_DATABASE_URL` set to the verified direct connection and `npm --prefix server run prisma:deploy`.
 2. Run `node scripts/package-vercel.mjs <reviewed-commit>`. The command prints the generated directory. Inspect the source revision, bundled assets and server files. The packager reads the committed tree.
 3. Link only the generated directory to the verified Vercel project. From that directory use `vercel project inspect --non-interactive` and confirm the owner, project, and Node runtime before deploying. The package includes the compiled Prisma client. The Vercel build does not generate the client or run migrations. [Vercel Express deployment](https://vercel.com/docs/frameworks/backend/express)
-4. Stage the release with `vercel deploy --prod --skip-domain`, then inspect its build and routes. Promote the verified production deployment to the canonical origin. The configured `APP_ORIGIN` is required for authentication and GraphQL writes, so exercise those flows at the canonical URL. [Vercel promotion and rollback](https://vercel.com/docs/cli/deploying-from-cli)
+4. Stage the release with `vercel deploy --prod --skip-domain`, then inspect its build and routes. Promote the verified production deployment to the canonical origin. Promotion requests can return before alias propagation finishes: verify the canonical alias points to the intended deployment and its HTML loads the expected assets before running acceptance checks. The configured `APP_ORIGIN` is required for authentication and GraphQL writes, so exercise those flows at the canonical URL. [Vercel promotion and rollback](https://vercel.com/docs/cli/deploying-from-cli)
 5. Record the source revision, public URL, migration state, and verification. For a failed release with a previous working deployment, roll back the Vercel deployment and assess schema compatibility separately.
 
 Apply the additive archive, owner inventory, and project expense migrations before staging builds that query those fields. Readiness checks require all three migrations. Once a project is archived, use an archive-aware deployment for rollback so the read-only policy continues to apply.
@@ -56,6 +56,26 @@ No production migration was run for this release; it uses the previously applied
 ### Eligibility release gate
 
 The separate account-eligibility feature requires migrations `20261124163000_account_eligibility` and `20261124170000_account_eligibility_restriction`, runtime acknowledgment-table privileges and User restriction-column access. Neither new migration was applied to production during the UI release. After eligibility is deployed, rollback to a build that ignores acknowledgments or holds is unsafe; preserve that boundary. Verify real OTP, Google consent/linking, existing-session acknowledgment, public privacy route, restriction denial and sign-out before calling the new auth workflow accepted. [Full criteria](ACCOUNT-ELIGIBILITY.md).
+
+## Release 2026-11-25 · account eligibility
+
+The owner approved local UI review and merged [PR #7](https://github.com/davidmagbee/RepairVantage/pull/7) at `f1cc1d024464d08b47230722983aec8810988633`. Its tree equals tested feature head `ce177748accf67be699672e72c1739b5d23e206e`; that exact reviewed tree was packaged for production. PR Verify and [merged-main Verify](https://github.com/davidmagbee/RepairVantage/actions/runs/45656586620) passed. Current client/server runtime npm audits returned zero vulnerabilities. Local feature acceptance remained 52 Node + 79 Chromium tests, 99.01% lines / 96.90% branches; those tests were not rerun merely for this release record.
+
+Prisma applied `20261124163000_account_eligibility` and `20261124170000_account_eligibility_restriction` to the verified `repairvantage` production database, project `muddy-smoke-36782232`, branch `br-super-union-bcqtliyl`. Migration transport used the direct owner connection with `sslmode=verify-full`. All nine migrations are now applied. Runtime role `repairvantage_app` has acknowledgment SELECT/INSERT/UPDATE and restriction-column SELECT/UPDATE. These were checked explicitly; readiness alone was not used as proof of write permissions. No acceptance, hold or fixture account was backfilled.
+
+Production deployment [`dpl_CjSsbytY3cPDrYS8yKQjZAgVJCze`](https://vercel.com/davidmagbees-projects/repairvantage/CjSsbytY3cPDrYS8yKQjZAgVJCze) was staged without domains. Protected-deployment checks passed readiness, eligibility status, privacy and dashboard deep-link shell. It was then promoted to [the canonical origin](https://repairvantage.davidmagbee.com). Alias assignment and public assets `index-C75HHS4e.js` / `index-CE3blD3a.css` were verified after propagation.
+
+Production verification:
+
+- Health/readiness/provider discovery returned 200; both configured providers remain available.
+- Anonymous eligibility status returned the current 18+ policy. Browser inspection showed the age form and the published privacy notice with approved contact `repairvantageadmin@gmail.com`.
+- Signed-out private GraphQL denied `me` with `UNAUTHENTICATED` and no private data.
+- OTP initiation without eligibility returned 403 before any recipient was supplied. No code email was sent.
+- A separate anonymous request context declaring 16 was rejected; an immediate adult retry with that rejection cookie was also rejected. A fresh anonymous adult declaration returned 204. These requests were separate from the owner's browser and created no account-level hold.
+- Signed-out acknowledgment returned 401. New authenticated acknowledgment writes and Google/OTP sign-in/linking still require the owner's live walkthrough; historical acceptance of unchanged auth is not substituted for these new flows.
+- A deployment-scoped error/fatal query over the preceding 15 minutes returned no matching groups. This is a bounded observation, not proof that no error ever occurred.
+
+The new runtime enforces eligibility on existing sessions. **Old deployments `472cd93` / `dpl_8V69mRY95LqEm3pi4GmgEMt3DixZ` and earlier ignore those holds and are no longer safe rollback targets once live holds/acknowledgments exist.** Recover with an eligibility-aware, archive-aware build. The database migrations are additive; do not drop audit records or restriction state as a routine rollback.
 
 ## Release QA
 

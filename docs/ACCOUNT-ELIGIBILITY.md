@@ -2,6 +2,8 @@
 
 Owner decisions recorded 2026-11-24: general audience, not child-directed; minimum account age **18**; existing accounts must acknowledge the current rule. **US-only is the intended launch market, not an IP-based restriction.** Public service/contact brand is **RepairVantage**; approved privacy/deletion contact is **repairvantageadmin@gmail.com**. The owner reports no incorporated entity. Do not describe the brand as an LLC or claim that a trade name resolves every legal operator-disclosure requirement.
 
+Production release: 2026-11-25, source `ce17774` (same tree as main merge `f1cc1d0`). Both additive migrations and runtime privileges are verified. Hosted provider and existing-session acceptance remain separate from signed-out smoke checks.
+
 ## Implemented boundary
 
 [`ELIGIBILITY_POLICY`](../server/src/eligibility.ts) owns the minimum age, statement, version and market metadata. Login and registration both screen before showing email or Google actions: both sign-in methods can implicitly create accounts. Neutral numeric age entry creates a signed, HttpOnly, SameSite=Lax cookie; Secure is enabled in production. Exact age/DOB is not stored in the cookie or database by this feature. An adult declaration lasts ten minutes; an anonymous rejection lasts 24 hours and deters immediate Back/retry attempts. Clearing cookies can bypass that anonymous deterrent; this is not identity verification.
@@ -23,7 +25,7 @@ An under-age declaration made with a verified session also persists `User.eligib
 | `POST /api/eligibility/acknowledgment` | Verified session, current version and literal acceptance; server selects the user and timestamp. |
 | `/privacy` | Public factual notice and approved mail contact; not consent to a hidden set of terms. |
 
-Apply both additive migrations before deploying this feature: `20261124163000_account_eligibility` and `20261124170000_account_eligibility_restriction`. They do not backfill acceptance. Verify runtime SELECT/INSERT/UPDATE privileges on the acknowledgment table and SELECT/UPDATE on User using the approved owner/default-grant procedure. Readiness checks the table and restriction column. Production UI source `472cd93` predates these changes; its release needs neither new migration.
+Apply both additive migrations before deploying this feature: `20261124163000_account_eligibility` and `20261124170000_account_eligibility_restriction`. They do not backfill acceptance. Verify runtime SELECT/INSERT/UPDATE privileges on the acknowledgment table and SELECT/UPDATE on User using the approved owner/default-grant procedure. Readiness checks the table and restriction column. Both migrations are now applied to production. Historical UI source `472cd93` predates these boundaries; it is not a safe rollback once acknowledgments or holds exist.
 
 Do not roll this feature back to code that omits the acknowledgment/restriction boundary after holds or records exist. A rollback must preserve the current restriction and access semantics; reverting UI alone is not a recovery plan.
 

@@ -46,7 +46,7 @@ For an explicitly authorized demonstration account, use the [opt-in legacy proje
 
 Set `DIRECT_DATABASE_URL` to the intended direct connection and run `npm --prefix server run prisma:deploy` as a release step. Prisma 7 loads [`prisma.config.ts`](prisma.config.ts) for CLI commands. Client generation and builds run without database credentials. The start command requires a successful build and available schema. `GET /health` checks liveness. `GET /ready` checks the application and database before routing traffic. See the [release runbook](../docs/DEPLOYMENT.md) for the deployment target and smoke checks.
 
-Production UI source `472cd93` was promoted on 2026-11-24; it retains the seven-migration schema. The new eligibility feature adds two more migrations that have only been exercised in disposable PostgreSQL at this checkpoint. Apply both and verify runtime privileges before releasing eligibility code. [Release evidence](../docs/DEPLOYMENT.md). Rollbacks must preserve every deployed access restriction, including archive policy and, once deployed, eligibility holds.
+Production eligibility source `ce17774` (same tree as main merge `f1cc1d0`) was promoted on 2026-11-25 with all nine migrations applied. Both additive eligibility migrations ran through the verified direct owner connection; acknowledgment SELECT/INSERT/UPDATE and User restriction SELECT/UPDATE privileges were verified for repairvantage_app. [Release evidence](../docs/DEPLOYMENT.md). Rollbacks must preserve every deployed access restriction, including archive policy and, once deployed, eligibility holds.
 
 ## Access policy
 
