@@ -64,6 +64,9 @@
 .workspace-skip-link:focus { transform: translateY(0); }
 .workspace-content { max-width: 1280px; margin: 0 auto; padding: 36px 32px 64px; }
 .workspace-content:focus { outline: none; }
+.workspace-time-zone { display: flex; justify-content: flex-end; align-items: flex-end; flex-wrap: wrap; gap: 8px; margin: -12px 0 22px; }
+.workspace-time-zone .select { width: min(100%, 290px); max-width: 100%; }
+.workspace-time-zone .form-control { min-width: 0; }
 .workspace-content :focus-visible { outline-color: #4f46d8; }
 .workspace-content h1 { color: #202738; letter-spacing: -.8px; line-height: 1.2; }
 .workspace-content h2, .workspace-content h3 { letter-spacing: -.3px; }

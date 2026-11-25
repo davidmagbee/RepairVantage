@@ -1,0 +1,60 @@
+/* Override DaisyUI's vertical card flex layout only for the project overview. */
+.workspace-content .project-overview__body {
+  display: grid;
+  gap: 24px;
+}
+
+.project-overview__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.project-overview__identity { flex: 1; min-width: 0; }
+.project-overview__identity h1, .project-overview__description { overflow-wrap: anywhere; }
+.project-overview__description { margin-top: 12px; max-width: 76ch; color: #566279; line-height: 1.6; }
+.project-overview__summary { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 24px; }
+.project-overview__summary dt { color: #647087; font-size: 12px; }
+.project-overview__summary dd { margin-top: 5px; color: #273248; font-size: 14px; font-weight: 600; }
+
+.project-overview__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  align-items: start;
+  gap: 28px;
+  border-top: 1px solid var(--workspace-border);
+  padding-top: 22px;
+}
+
+.project-overview__content--read-only { grid-template-columns: minmax(0, 1fr); }
+.project-overview__schedule, .project-overview__settings, .project-overview__field { min-width: 0; }
+.project-overview__section-title { margin-bottom: 16px; color: #414c62; font-size: 14px; font-weight: 650; }
+.project-overview__schedule dl, .project-overview__controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.project-overview__schedule dl > div { min-width: 0; overflow-wrap: anywhere; }
+.project-overview__controls { align-items: start; }
+.project-overview__field-inputs { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.project-overview__field-inputs .form-control { flex: 1 1 130px; min-width: 0; }
+.project-overview__field-inputs .select { width: 100%; }
+.project-overview__field-inputs > .btn { flex: 1 0 auto; }
+
+.project-overview__actions { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 16px; border-top: 1px solid var(--workspace-border); padding-top: 18px; }
+.project-overview__actions > .link { display: inline-flex; align-items: center; min-height: 36px; font-size: 14px; }
+.project-overview__archive { margin-left: auto; }
+
+/* An expanded details editor occupies its own row without squeezing other actions. */
+.project-overview__details-form { display: grid; flex: 1 0 100%; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: start; gap: 16px; }
+.project-overview__full-row { grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+  .project-overview__content { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
+
+@media (max-width: 560px) {
+  .project-overview__header { flex-direction: column; gap: 16px; }
+  .project-overview__content, .project-overview__details-form, .project-overview__controls { grid-template-columns: minmax(0, 1fr); }
+  .project-overview__archive { margin-left: 0; }
+  .project-overview__actions { gap: 12px; }
+  .project-overview__field-inputs .form-control { flex-basis: 150px; }
+  .workspace-content .project-overview__body { padding: 20px; }
+}

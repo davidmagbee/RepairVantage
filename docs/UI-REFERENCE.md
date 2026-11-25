@@ -10,7 +10,7 @@ The owner identified the RepairVantage image in their portfolio as the intended 
 
 `dev/portfolio-ui` restores the indigo workspace navigation, three colored summary cards, completion progress, two-column overview panels, status breakdown, and a wider light workspace. Project cards regain status colors and clear hierarchy, with search and status filters. Existing details, tasks, inventory, schedule, and reports use the shared form, table, panel, and button styling.
 
-The new dashboard is at `/projects/dashboard`. Existing project and sign-in destinations remain unchanged. Dashboard statistics use only the verified account's owned, unarchived projects. Active means Planned, In progress, or On hold, matching inventory-demand semantics. Completed is the completed count; completion rate divides completed by all unarchived owned projects, including Cancelled. Shared projects remain outside owner totals. The upcoming panel shows at most five unfinished task deadlines in the next seven days from active owned projects. Dates are UTC.
+The new dashboard is at `/projects/dashboard`. Existing project and sign-in destinations remain unchanged. Dashboard statistics use only the verified account's owned, unarchived projects. Active means Planned, In progress, or On hold, matching inventory-demand semantics. Completed is the completed count; completion rate divides completed by all unarchived owned projects, including Cancelled. Shared projects remain outside owner totals. The upcoming panel shows at most five unfinished task deadlines in the next seven days from active owned projects. The deployed dashboard uses UTC; the current development refinement below adds the selected display zone.
 
 The original screenshot's activity feed and numbers were prototype fixtures. The restored view uses actual counts and recent project `updatedAt` values, labeled **Recent project updates**. It does not claim a historical activity log or create production fixtures. Recent updates are limited to five projects and ordered by saved update time, with stable ID ties.
 
@@ -18,7 +18,26 @@ The original screenshot's activity feed and numbers were prototype fixtures. The
 
 Use the disposable PostgreSQL and browser commands in [Engineering](ENGINEERING.md). Dashboard API tests exercise ownership, shared-reader exclusion, archive filtering, terminal-project/task exclusion, date windows, and stable ordering. Browser tests exercise metrics, links, retry/empty states, project filters, current navigation, and narrow layouts. Desktop/mobile screenshots were inspected against the reference. The full local run passed 48 Node and 71 Chromium tests, with 99.03% source lines and 96.82% branches (`coverage/run-hZPyCD/report/`). A valid-long-name mobile overflow was reproduced, fixed, and covered by a permanent regression.
 
-This UI restoration is separate from the deployed feature release `935418c`. The owner is reviewing new feature behavior on that release. Authentication implementation and production provider settings were unchanged by the feature release; the owner confirmed existing OTP, Google consent, and linking. New UI code does not change those flows.
+This UI restoration followed foundation release `935418c`. The owner confirmed existing OTP, Google consent, and linking for that historical unchanged-auth implementation. The later eligibility release changed the entry/acknowledgment workflow; its hosted-provider acceptance remains separate. [Current release boundary](HANDOFF.md).
+
+## Local time and project overview · current development
+
+`dev/local-time-project-layout` is based on `main` at `51ec71b`; this refinement has not been deployed. The owner's supplied Project Details screenshot identifies two problems: UTC dates require conversion and vertical controls leave most of the wide card empty.
+
+The branch adds a workspace **Time zone** selector, detected from the device with Eastern fallback and a browser-persisted manual choice. Project/task dates and other workspace timestamps use that zone. Open editors retain their displayed editing zone until closed. UTC storage and report CSV timestamps remain unchanged. [Usage and DST behavior](../client/README.md#time-zone-preference).
+
+The overview keeps title/description and status/priority together at the top. Schedule and Project settings sit beside each other on wide screens; settings keep independent saves. Edit details, report and archive actions share the bottom area. The grid collapses on narrow screens, while members and archived projects retain their existing access controls. This is a layout refinement; new dependencies, events and reporting features remain outside the slice.
+
+Manual acceptance before release:
+
+1. Review a wide desktop and narrow mobile Project Details view against the supplied screenshot. Check long names/descriptions/dates, keyboard focus and horizontal overflow; open both date/detail editors.
+2. Select Eastern and Pacific zones. Check project dates, task dates, dashboard, comments, invitation expiry, expense dates and Schedule change consistently. Reload to verify the browser preference; use **Use device time zone** to restore detection.
+3. Open a date/task editor, change the global zone, then save. Confirm its displayed editing zone and saved instant stay consistent; cancel/reopen adopts the new zone. Leave a seconds-bearing repeated-hour deadline untouched while editing another field; verify no timestamp mutation.
+4. In Eastern, reject `2026-03-08 02:30`; for `2026-11-01 01:30`, choose each occurrence and verify the distinct instant after reload. Test empty fields, reversed project dates, failed-save retry and cancellation.
+5. Exercise Schedule across spring/autumn transitions, including a 93-calendar-date autumn range; reject a 94-date range. Check first visible calendar placement, full timeline span and cross-zone date boundaries.
+6. Repeat member and archived-project read-only views; compare CSV UTC timestamps and totals before/after changing the display zone. Review browser print output.
+
+Current-feature local acceptance passed: 52 Node + 92 Chromium tests, 99.02% lines / 96.93% branches, client lint/build and server build. Independent reviews found no actionable defect. Synthetic 1440px desktop and 375px mobile card captures were inspected without horizontal overflow, console errors or page errors. [Desktop overview](design/project-overview-desktop.png) · [Mobile overview](design/project-overview-mobile.png). These show local fixtures, not production records. Owner acceptance remains pending. Historical restoration captures below are not evidence for this refinement. [Current evidence](HANDOFF.md#verification-checkpoint).
 
 ## Review captures
 

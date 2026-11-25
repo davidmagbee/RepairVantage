@@ -3,6 +3,39 @@ import type { Context } from '../policy';
 
 const dayMs = 86_400_000;
 
+function calendarDay(date: Date, formatter: Intl.DateTimeFormat) {
+  const parts = formatter.formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)!.value;
+  const year = Number(value('year'));
+  const day = new Date(0);
+  // setUTCFullYear preserves years 0–99; Date.UTC would silently reinterpret them as 1900–1999.
+  day.setUTCFullYear(value('era') === 'BC' ? 1 - year : year, Number(value('month')) - 1, Number(value('day')));
+  return day.getTime() / dayMs;
+}
+
+/** Calendar limits count date labels, not 24-hour buckets: DST can make a local day 23 or 25 hours. */
+function validateRange(from: Date, to: Date, timeZone?: string | null) {
+  const duration = to.getTime() - from.getTime();
+  if (duration <= 0) badInput('Choose a schedule range of up to 93 days');
+  if (timeZone == null) {
+    // Existing callers retain the original elapsed-time contract.
+    if (duration > 93 * dayMs) badInput('Choose a schedule range of up to 93 days');
+    return;
+  }
+  let formatter: Intl.DateTimeFormat;
+  try {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone, calendar: 'gregory', numberingSystem: 'latn',
+      year: 'numeric', month: '2-digit', day: '2-digit', era: 'short',
+    });
+  } catch {
+    badInput('Choose a valid schedule time zone');
+  }
+  // The exclusive endpoint must not count the next date when it lands exactly at local midnight.
+  const days = calendarDay(new Date(to.getTime() - 1), formatter) - calendarDay(from, formatter) + 1;
+  if (days < 1 || days > 93) badInput('Choose a schedule range of up to 93 local calendar days');
+}
+
 function dateOverlap(end: 'endDate' | 'dueDate', from: Date, to: Date) {
   const inRange = { gte: from, lt: to };
   return [
@@ -23,10 +56,9 @@ function scheduledDates(start: Date | null, end: Date | null, from: Date, to: Da
 }
 
 export const scheduleQueries = {
-  schedule: async (_parent: unknown, { from, to }: { from: Date; to: Date }, context: Context) => {
+  schedule: async (_parent: unknown, { from, to, timeZone }: { from: Date; to: Date; timeZone?: string | null }, context: Context) => {
     const userId = authenticated(context).id;
-    const duration = to.getTime() - from.getTime();
-    if (duration <= 0 || duration > 93 * dayMs) badInput('Choose a schedule range of up to 93 days');
+    validateRange(from, to, timeZone);
     const taskWhere = { OR: dateOverlap('dueDate', from, to) };
     const projects = await context.prisma.project.findMany({
       where: { userId, archivedAt: null, OR: [...dateOverlap('endDate', from, to), { tasks: { some: taskWhere } }] },

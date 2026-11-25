@@ -63,6 +63,16 @@ npm --prefix server run test:auth
 
 Run `npm --prefix client test` for Chromium tests with mocked network boundaries. For the real local workflow, start `node server/test/browser-server.cjs` with the disposable URL, then run `REAL_API=1 npm --prefix client test`. The test server sends codes to a loopback-only mail sink. CI installs Chromium and runs this path against a disposable service database.
 
+### Time-zone and Project Details slice
+
+The current branch adds the client `@js-temporal/polyfill` dependency; use the client lockfile. No migration, server timezone setting or auth-provider configuration is required. The UI preference lives under `repairvantage:time-zone` in browser local storage, shared by accounts using that browser. To reproduce first-use detection, remove only that key; **Use device time zone** replaces the saved choice with current detection. Do not clear auth/eligibility storage to reset a display preference.
+
+Run owning lint/build checks and the date/preference/task/Schedule browser suites, then the disposable-PostgreSQL Schedule API tests and real report flow. Verify changed labels and formatter output deliberately; forcing UTC everywhere would miss the feature. Deterministic cases should set the display preference or browser timezone explicitly. Exercise at least one non-UTC zone, DST gaps/folds, untouched precision, editor-zone freezing, and 23-/25-hour calendar boundaries. The server must accept a 93-civil-date autumn interval only with the optional valid zone and retain the legacy 93-elapsed-day limit when omitted/null. [Behavior and manual QA](UI-REFERENCE.md#local-time-and-project-overview--current-development).
+
+The current feature passed `node scripts/coverage.mjs --minimum-lines=99` against disposable PostgreSQL: 52 Node + 92 Chromium, 99.02% lines / 96.93% branches (`coverage/run-Kfe3KN/report/`). Client lint completed without warnings; client/server builds passed. Synthetic desktop/mobile inspection and independent source review passed; owner acceptance remains pending. Historical release counts do not verify this feature. Record subsequent deltas in HANDOFF.md and the PR; deployment stays a separate reviewed step.
+
+The client build emits a 656.71 kB entry script (196.53 kB gzip) and Vite's >500 kB chunk warning. The Temporal-backed date utility is imported through the global provider; the dependency provides explicit DST gap/fold handling but increases initial loading cost. Retain the warning in review evidence and measure route/dependency splitting as a follow-up rather than raising the threshold to hide it.
+
 ## Application coverage
 
 With Chromium installed and the disposable `TEST_DATABASE_URL` migrated, run `node scripts/coverage.mjs` from the repository root. Use a test URL without query parameters. It builds the server, runs the Node suites and Chromium against a local test API, then combines source-mapped coverage in a fresh `coverage/run-*/report/` directory. Ports 4000 and 5173 are reserved for the run. Keep the normal development servers stopped while it runs.

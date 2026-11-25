@@ -3,6 +3,8 @@ import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { privateOperation } from '../graphql/client';
 import { ADD_PROJECT_EXPENSE, GET_PROJECT_REPORT, type ProjectReportTotals } from '../graphql/reports';
+import { useTimeZone } from '../context/TimeZoneContext';
+import { formatDate } from '../time/date-time';
 
 type ReportData = {
   project: { id: string; name: string; archivedAt: string | null } | null;
@@ -39,6 +41,7 @@ function downloadReport(name: string, report: ProjectReportTotals) {
 }
 
 export default function ProjectReport() {
+  const { timeZone } = useTimeZone();
   const { id } = useParams();
   const { data, loading, error, refetch } = useQuery<ReportData>(GET_PROJECT_REPORT, {
     variables: { projectId: id }, context: privateOperation, fetchPolicy: 'network-only',
@@ -129,7 +132,7 @@ export default function ProjectReport() {
                 <tr key={expense.id}>
                   <td className="break-words">{expense.description}</td>
                   <td>{usd.format(expense.amountCents / 100)}</td>
-                  <td><time dateTime={expense.createdAt}>{new Date(expense.createdAt).toLocaleDateString()}</time></td>
+                  <td><time dateTime={expense.createdAt}>{formatDate(expense.createdAt, timeZone)}</time></td>
                 </tr>
               ))}</tbody>
             </table>

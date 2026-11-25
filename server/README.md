@@ -61,3 +61,11 @@ Production eligibility source `ce17774` (same tree as main merge `f1cc1d0`) was 
 - Project creation and date updates reject an end before the effective start. Partial and cleared schedules are allowed. Date patches validate against stored endpoints under the project lock; unrelated edits preserve legacy reversed dates.
 - Dashboard totals and recent updates include only owned, unarchived projects. Upcoming task deadlines additionally exclude completed/cancelled parents and completed tasks. Shared readers cannot include another owner's projects in dashboard totals.
 - Schedule views and USD expense reports are owner-only. Archived projects retain readable reports. Task hours follow task edit authorization.
+
+## Schedule time-zone contract
+
+The current development branch adds optional `timeZone: String` to `schedule(from: DateTime!, to: DateTime!, timeZone: String)`. This API change is not deployed yet. Endpoints remain UTC instants and the query interval is `[from, to)`. With `timeZone` omitted or null, the existing positive, at-most-93-elapsed-day contract is unchanged.
+
+When supplied, the zone must be accepted by `Intl.DateTimeFormat`. The interval must be positive and span no more than 93 local calendar dates, counting the dates of `from` and `to - 1ms` inclusively. This permits a 93-date autumn range with an extra elapsed hour and handles local days whose clocks skip midnight. It does not require endpoints to be midnight. Invalid zones and 94-date ranges return `BAD_USER_INPUT`. Authentication, owner scoping, archived-project exclusion and overlap semantics are unchanged. [Resolver](src/graphql/resolvers/schedule.ts) · [API tests](test/schedule.test.cjs).
+
+The client converts its inclusive calendar-date range to local day starts, then sends UTC instants plus the selected zone. No Prisma schema, migration, server environment or stored-date conversion is required; CSV UTC timestamps remain unchanged.

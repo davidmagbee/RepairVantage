@@ -10,6 +10,9 @@ import { privateOperation } from '../graphql/client';
 import { ADD_PROJECT_COMMENT, ARCHIVE_PROJECT, DELETE_PROJECT, RESTORE_PROJECT, UPDATE_PROJECT_DETAILS, UPDATE_PROJECT_PRIORITY, UPDATE_PROJECT_STATUS } from '../graphql/mutations';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
 import type { Project, ProjectWithComments } from '../graphql/queries';
+import { useTimeZone } from '../context/TimeZoneContext';
+import { formatDateTime } from '../time/date-time';
+import '../project-details.css';
 
 const projectFieldControls = {
   status: {
@@ -77,7 +80,7 @@ function ProjectDetailsEditor({ project }: { project: Project }) {
   }
 
   return (
-    <form aria-label="Edit project details" className="space-y-3" onSubmit={submit}>
+    <form aria-label="Edit project details" className="project-overview__details-form" onSubmit={submit}>
       <label className="form-control gap-1">
         <span>Project name</span>
         <input className="input input-bordered" name="name" defaultValue={project.name} maxLength={120} disabled={loading} required />
@@ -86,8 +89,8 @@ function ProjectDetailsEditor({ project }: { project: Project }) {
         <span>Description (optional)</span>
         <textarea className="textarea textarea-bordered" name="description" defaultValue={project.description ?? ''} rows={5} maxLength={2000} disabled={loading} />
       </label>
-      {message && <p className="alert alert-error" role="alert">{message}</p>}
-      <div className="flex flex-wrap gap-2">
+      {message && <p className="alert alert-error project-overview__full-row" role="alert">{message}</p>}
+      <div className="project-overview__full-row flex flex-wrap gap-2">
         <button className="btn btn-primary" type="submit" disabled={loading}>
           {loading ? 'Saving…' : 'Save details'}
         </button>
@@ -113,8 +116,8 @@ function ProjectFieldControl({ project, field }: { project: Project; field: keyo
 
   return (
     // Remount the uncontrolled select when this field saves. Other field drafts stay intact.
-    <form className="space-y-2" key={savedValue} onSubmit={submit}>
-      <div className="flex flex-wrap items-end gap-3">
+    <form className="project-overview__field space-y-2" key={savedValue} onSubmit={submit}>
+      <div className="project-overview__field-inputs">
         <label className="form-control gap-1">
           <span>Project {field}</span>
           <select className="select select-bordered capitalize" name={field} defaultValue={savedValue} disabled={loading}>
@@ -176,6 +179,7 @@ function ProjectDeleteControl({ project }: { project: Project }) {
 }
 
 function ProjectComments({ project }: { project: ProjectWithComments }) {
+  const { timeZone } = useTimeZone();
   const [body, setBody] = useState('');
   const [addComment, { loading, error }] = useMutation(ADD_PROJECT_COMMENT, {
     context: privateOperation,
@@ -202,7 +206,7 @@ function ProjectComments({ project }: { project: ProjectWithComments }) {
               <li className="rounded-box bg-base-200 p-4" key={comment.id}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4">
                   <strong className="break-all">{comment.author.name || 'Project member'}</strong>
-                  <time className="text-sm" dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleString()}</time>
+                  <time className="text-sm" dateTime={comment.createdAt}>{formatDateTime(comment.createdAt, timeZone)}</time>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap break-words">{comment.body}</p>
               </li>
@@ -264,31 +268,47 @@ export default function ProjectDetails() {
       )}
       {project && (
         <>
-          <article className="card bg-base-100 shadow">
-            <div className="card-body gap-4">
-              <h1 className="break-words text-3xl font-bold">{project.name}</h1>
-              <dl className="flex flex-wrap gap-4">
-                <div>
-                  <dt className="font-semibold">Status</dt>
-                  <dd className="capitalize">{displayLabel(project.status)}</dd>
+          <article className="card bg-base-100 shadow project-overview" aria-labelledby="project-overview-title">
+            <div className="card-body project-overview__body">
+              <header className="project-overview__header">
+                <div className="project-overview__identity">
+                  <h1 id="project-overview-title" className="text-3xl font-bold">{project.name}</h1>
+                  {project.description && <p className="project-overview__description whitespace-pre-wrap">{project.description}</p>}
                 </div>
-                <div>
-                  <dt className="font-semibold">Priority</dt>
-                  <dd className="capitalize">{displayLabel(project.priority)}</dd>
-                </div>
-              </dl>
-              {project.description && <p className="whitespace-pre-wrap break-words">{project.description}</p>}
-              <ProjectDates key={`dates-${project.id}`} project={project} />
+                <dl className="project-overview__summary">
+                  <div>
+                    <dt className="font-semibold">Status</dt>
+                    <dd className="capitalize">{displayLabel(project.status)}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold">Priority</dt>
+                    <dd className="capitalize">{displayLabel(project.priority)}</dd>
+                  </div>
+                </dl>
+              </header>
               {project.archivedAt && <p role="status">This project is archived and read-only.</p>}
-              {project.canManage && !project.archivedAt && (
-                <>
-                  <ProjectDetailsEditor key={project.id} project={project} />
-                  <ProjectFieldControl key={`status-${project.id}`} project={project} field="status" />
-                  <ProjectFieldControl key={`priority-${project.id}`} project={project} field="priority" />
-                </>
+              <div className={`project-overview__content${project.canManage && !project.archivedAt ? '' : ' project-overview__content--read-only'}`}>
+                <div className="project-overview__schedule">
+                  <h2 className="project-overview__section-title">Schedule</h2>
+                  <ProjectDates key={`dates-${project.id}`} project={project} />
+                </div>
+                {project.canManage && !project.archivedAt && (
+                  <section className="project-overview__settings" aria-labelledby="project-settings-heading">
+                    <h2 className="project-overview__section-title" id="project-settings-heading">Project settings</h2>
+                    <div className="project-overview__controls">
+                      <ProjectFieldControl key={`status-${project.id}`} project={project} field="status" />
+                      <ProjectFieldControl key={`priority-${project.id}`} project={project} field="priority" />
+                    </div>
+                  </section>
+                )}
+              </div>
+              {project.canManage && (
+                <div className="project-overview__actions">
+                  {!project.archivedAt && <ProjectDetailsEditor key={project.id} project={project} />}
+                  <Link className="link" to={`/projects/${project.id}/report`}>Project report</Link>
+                  <div className="project-overview__archive"><ProjectArchiveControl key={project.id} project={project} /></div>
+                </div>
               )}
-              {project.canManage && <ProjectArchiveControl key={project.id} project={project} />}
-              {project.canManage && <Link className="link self-start" to={`/projects/${project.id}/report`}>Project report</Link>}
             </div>
           </article>
           <div className="space-y-3">
