@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">RepairVantage house and repair tools</title>
+  <!-- The quiet white backplate preserves the black mark on dark browser chrome. -->
+  <rect width="96" height="96" rx="14" fill="#fff" />
+  <path d="M14 42 46 15l29 24M24 34v49h25" fill="none" stroke="#101010" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- A filled, double-ended wrench uses shaped jaws rather than a heavy U-shaped stroke. -->
+  <path d="M60 42v7l4.5 3 4.5-3v-7c3 1.7 4.7 4.8 4.7 8.3 0 4.2-2.7 7.7-6.4 8.9v13.3c3.7 1.2 6.4 4.6 6.4 9 0 3.5-1.7 6.5-4.7 8.3v-7l-4.5-3-4.5 3v7c-3-1.8-4.7-4.8-4.7-8.3 0-4.4 2.7-7.8 6.4-9V59.2c-3.7-1.2-6.4-4.7-6.4-8.9 0-3.5 1.7-6.6 4.7-8.3Z" fill="#101010" />
+  <!-- A straight flat blade and a distinct orange grip stay separate from the wrench. -->
+  <path d="M83 41h5v9h-1.2v20h-2.6V50H83Z" fill="#101010" />
+  <path d="M80.5 68h10v17a5 5 0 0 1-10 0Z" fill="#f58232" />
+  <path d="M84 73v11.5M87 73v11.5" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" />
+</svg>

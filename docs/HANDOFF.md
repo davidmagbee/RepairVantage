@@ -19,6 +19,7 @@ Implemented on the current development branch, not deployed:
 - Consistent project/task/dashboard/comment/invitation/report display in the selected zone. Project/task editors freeze their zone at opening, reject skipped local times, require first/second choice for repeated local times, and preserve unchanged precision and saved occurrence. Stored instants and CSV UTC timestamps remain unchanged.
 - Schedule date inputs are inclusive local dates, converted to UTC `[from, to)` day boundaries. Civil-date arithmetic drives calendar/timeline placement. The optional API `timeZone` accepts at most 93 local dates; omitted/null retains the original 93-elapsed-day limit. No Prisma migration or server configuration change.
 - Project Details uses side-by-side Schedule/settings on wide screens and collapses on narrow screens. Status/priority saves and owner/member/archive access rules remain intact. Authentication/eligibility implementation and provider settings are outside this slice.
+- PR #9 also adds a standalone local SVG favicon: black house/wrench, orange-handled screwdriver, no window, with a white backplate for browser-tab contrast. No icon-library dependency is introduced. Favicon verification is recorded separately from the timezone test baseline below; production remains unchanged.
 
 [Usage](../client/README.md#time-zone-preference) · [API contract](../server/README.md#schedule-time-zone-contract) · [Design/manual QA](UI-REFERENCE.md#local-time-and-project-overview--current-development).
 
@@ -32,6 +33,7 @@ Migrations `20261124163000_account_eligibility` and `20261124170000_account_elig
 
 ## Verification checkpoint
 
+- Favicon follow-up: client production build passed; built HTML links `/favicon.svg`, which returns HTTP 200 as `image/svg+xml` (1,122 bytes). Inspected 16px/32px renders on light/dark backgrounds and an enlarged mark. [Preview](design/favicon-preview.png). Static SVG contains no script, font or external dependency. This asset/HTML-only change does not reuse the older full-suite result as new coverage evidence; current PR checks and owner visual acceptance remain required.
 - Current timezone/layout feature: client lint passed with zero warnings; client/server builds passed. Twenty targeted browser tests passed, then the full disposable-PostgreSQL acceptance command `node scripts/coverage.mjs --minimum-lines=99` passed 52 Node + 92 Chromium tests with 99.02% lines / 96.93% branches. Report: `coverage/run-Kfe3KN/report/`. Independent source reviews found no actionable defect. Synthetic 1440px desktop and 375px mobile card captures were inspected without horizontal overflow, console errors or page errors. [Desktop](design/project-overview-desktop.png) · [Mobile](design/project-overview-mobile.png). Live owner acceptance remains pending.
 - Material tradeoff: the client build emits a 656.71 kB entry script (196.53 kB gzip) and Vite's >500 kB chunk warning. Temporal-backed helpers supply DST-safe conversion but load through the global provider. Measure route/dependency splitting as a follow-up; do not hide the warning by raising the threshold. [Verification guidance](ENGINEERING.md#time-zone-and-project-details-slice).
 - Fresh UI baseline: 48 Node + 71 Chromium, 99.03% lines/96.82% branches, lint/build, built-package desktop/mobile visual checks. Captures were synthetic, not production-account evidence.
@@ -50,6 +52,8 @@ Migrations `20261124163000_account_eligibility` and `20261124170000_account_elig
 ## Commit, staging, PR and QA
 
 Expected current feature commit message: `feat(scheduling): use local time zones and widen project overview`. Feature source is identified by `dev/local-time-project-layout`, base `51ec71b`, PR target `main`; inspect current Git/PR state for the exact tip. Historical deployed feature: `ce17774` — `feat(auth): require versioned adult eligibility acknowledgment`; release-record commit `5ae7c93` was merged through PR #8.
+
+Favicon follow-up commit: `feat(branding): add house and repair-tools SVG favicon`. Stage the SVG, HTML reference, preview and affected README/design/roadmap/handoff documentation together. PR #9's delta must list the favicon, fresh build/asset checks, reference-aligned house/tool composition, and unchanged release state. Manual QA: reload a fresh local browser tab, inspect the tab icon and open `/favicon.svg`; repeat after release.
 
 One current feature group: client timezone utility/context/controls, date formatting/editing, responsive detail layout, Temporal dependency and tests; server Schedule resolver/schema/API tests; root/client/server READMEs and ROADMAP, IMPLEMENTATION, UI-REFERENCE, ENGINEERING, HANDOFF. Stage explicit paths, inspect `git diff --cached` and include affected documentation in the same commit. PR uses `.github/pull_request_template.md`; record later behavior/verification/release deltas. No new migration or deployed-source claim belongs in this feature commit.
 

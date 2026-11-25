@@ -39,6 +39,10 @@ Manual acceptance before release:
 
 Current-feature local acceptance passed: 52 Node + 92 Chromium tests, 99.02% lines / 96.93% branches, client lint/build and server build. Independent reviews found no actionable defect. Synthetic 1440px desktop and 375px mobile card captures were inspected without horizontal overflow, console errors or page errors. [Desktop overview](design/project-overview-desktop.png) · [Mobile overview](design/project-overview-mobile.png). These show local fixtures, not production records. Owner acceptance remains pending. Historical restoration captures below are not evidence for this refinement. [Current evidence](HANDOFF.md#verification-checkpoint).
 
+## Repair-tools favicon · current PR
+
+The owner-supplied icon reference sets the favicon direction: a bold black house paired with a separate wrench and orange-handled screwdriver, with the window omitted. [Standalone SVG](../client/public/favicon.svg) is linked by the HTML entry point and included in Vite's public assets. Shaped wrench jaws and a straight screwdriver blade retain distinct tool silhouettes. The white rounded backplate maintains contrast on light/dark browser chrome. [Inspected 16px/32px and enlarged preview](design/favicon-preview.png). The client build and built-asset HTTP/MIME checks passed; owner visual acceptance and the released browser tab remain to be checked. This favicon has not been deployed.
+
 ## Review captures
 
 These captures use synthetic local test responses and show the implemented design, not the owner's production account. No production data or credentials appear in them.

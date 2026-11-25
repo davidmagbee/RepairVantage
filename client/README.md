@@ -13,6 +13,10 @@ npm run dev -- --strictPort
 
 Open `http://localhost:5173`. Vite proxies `/api/auth`, `/api/eligibility` and `/graphql` to Express on loopback port 4000. The browser origin must match the server's configured origin for OAuth, cookies, and request validation.
 
+## Browser icon
+
+The standalone [favicon](public/favicon.svg) uses a black house outline and wrench with an orange-handled screwdriver, without a window. A white rounded backplate preserves contrast on dark browser tabs. `index.html` references this local SVG; no icon package, font or external request is needed. The current PR includes the asset; production changes only after release. Hard-refresh or open a fresh tab when reviewing a cached browser icon.
+
 ## Account eligibility and privacy
 
 Login and registration screen age before email/Google account actions. After authentication, both new and existing accounts must explicitly acknowledge the current 18+ declaration before workspace or invitation access. A failed policy read blocks access with retry; sign-out and `/privacy` remain available. A private API policy denial refreshes the acknowledgment gate. These are self-declarations, not verified age. The public notice links the approved privacy/deletion mailbox. [Behavior, release prerequisites and country expansion](../docs/ACCOUNT-ELIGIBILITY.md).
