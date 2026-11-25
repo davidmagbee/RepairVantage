@@ -31,10 +31,12 @@ test('Vercel entry preserves API routes and serves an uncached SPA for deep link
         const ready = await fetch(base + '/ready');
         assert.equal(ready.status, 200);
         assert.deepEqual(await ready.json(), { status: 'ready' });
-        const deepLink = await fetch(base + '/projects/fixture');
-        assert.equal(deepLink.status, 200);
-        assert.equal(deepLink.headers.get('cache-control'), 'no-store');
-        assert.match(await deepLink.text(), /RepairVantage test shell/);
+        for (const route of ['/projects/fixture', '/privacy']) {
+          const deepLink = await fetch(base + route);
+          assert.equal(deepLink.status, 200);
+          assert.equal(deepLink.headers.get('cache-control'), 'no-store');
+          assert.match(await deepLink.text(), /RepairVantage test shell/);
+        }
       } finally {
         listener.closeAllConnections();
         await new Promise(resolve => listener.close(resolve));

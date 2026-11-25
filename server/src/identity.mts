@@ -2,11 +2,12 @@ import { createHmac } from 'node:crypto';
 import type { PrismaClient } from './generated/prisma/client.js';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { betterAuth } from 'better-auth';
-import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { APIError, addOAuthServerContext, createAuthMiddleware, getOAuthState } from 'better-auth/api';
 import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
 import { emailOTP } from 'better-auth/plugins';
 import { Resend } from 'resend';
 import type { readConfig } from './config.js';
+import { createEligibility, ELIGIBILITY_POLICY } from './eligibility.js';
 
 type IdentityConfig = ReturnType<typeof readConfig>;
 type CodeSender = (email: string, code: string) => Promise<void>;
@@ -64,6 +65,7 @@ function makeCodeSender(config: NonNullable<IdentityConfig['email']>): CodeSende
 export function createIdentity(prisma: PrismaClient, config: IdentityConfig, deliver?: CodeSender) {
   const sendCode = deliver ?? (config.email && makeCodeSender(config.email));
   const failedCodeDeliveries = new WeakSet<Request>();
+  const eligibility = createEligibility(config);
   const auth = betterAuth({
     appName: 'RepairVantage',
     baseURL: config.origin,
@@ -71,6 +73,17 @@ export function createIdentity(prisma: PrismaClient, config: IdentityConfig, del
     secret: config.authSecret,
     trustedOrigins: [config.origin],
     database: prismaAdapter(prisma, { provider: 'postgresql', transaction: true }),
+    databaseHooks: {
+      user: { create: { before: async (_user, context) => {
+        // The callback's trusted state survives Google redirects; client additionalData is never authority.
+        const cookieProof = eligibility.read(context?.request?.headers.get('cookie'));
+        const state = await getOAuthState();
+        const proof = state ? state.serverContext?.eligibility : cookieProof;
+        if (cookieProof?.eligible === false || !eligibility.validProof(proof) || !proof.eligible) {
+          throw new APIError('FORBIDDEN', { code: 'ELIGIBILITY_REQUIRED', message: 'Complete the account eligibility check first.' });
+        }
+      } } },
+    },
     user: {
       fields: { image: 'profilePicture' },
       validateUserInfo({ source }) {
@@ -106,6 +119,14 @@ export function createIdentity(prisma: PrismaClient, config: IdentityConfig, del
     },
     hooks: {
       before: createAuthMiddleware(async context => {
+        // Both login endpoints implicitly enroll users. Gate before email delivery or provider data collection.
+        if ([sendCodePath, '/sign-in/email-otp', '/sign-in/social'].includes(context.path)) {
+          const proof = eligibility.read(context.request?.headers.get('cookie'));
+          if (!proof?.eligible) {
+            throw new APIError('FORBIDDEN', { code: 'ELIGIBILITY_REQUIRED', message: 'Complete the account eligibility check first.' });
+          }
+          if (context.path === '/sign-in/social') await addOAuthServerContext({ eligibility: proof });
+        }
         if (context.path === sendCodePath) {
           if (context.body?.type !== 'sign-in') {
             throw new APIError('BAD_REQUEST', { message: 'Only sign-in codes are available.' });
@@ -152,9 +173,21 @@ export function createIdentity(prisma: PrismaClient, config: IdentityConfig, del
     handle: toNodeHandler(auth),
     providers: { google: Boolean(config.google), emailOtp: Boolean(sendCode) },
     async principal(headers: Parameters<typeof fromNodeHeaders>[0]) {
-      const session = await auth.api.getSession({ headers: fromNodeHeaders(headers) });
+      const requestHeaders = fromNodeHeaders(headers);
+      const session = await auth.api.getSession({ headers: requestHeaders });
       const user = session?.user;
-      return user?.emailVerified ? { id: user.id, email: user.email, emailVerified: true } : null;
+      if (!user?.emailVerified) return null;
+      const acknowledgment = await prisma.eligibilityAcknowledgment.findUnique({
+        where: { userId_policyVersion: { userId: user.id, policyVersion: ELIGIBILITY_POLICY.policyVersion } },
+        select: { id: true },
+      });
+      const currentUser = await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { eligibilityRestrictedAt: true } });
+      const eligibilityRestricted = currentUser.eligibilityRestrictedAt !== null;
+      return {
+        id: user.id, email: user.email, emailVerified: true,
+        eligibilityRestricted,
+        eligibilityAcknowledged: Boolean(acknowledgment) && !eligibilityRestricted && eligibility.read(requestHeaders.get('cookie'))?.eligible !== false,
+      };
     },
   };
 }

@@ -34,8 +34,15 @@ export async function checkpointCoverage(page: Page) {
   await page.coverage.startJSCoverage({ resetOnNavigation: false });
 }
 
-export const test = base.extend({
-  page: async ({ page }, runPage) => {
+export const test = base.extend<{ realEligibility: boolean }>({
+  realEligibility: [false, { option: true }],
+  page: async ({ page, realEligibility }, runPage) => {
+    // Isolated component scenarios use an already-accepted actor; full-stack suites exercise the real boundary.
+    if (!realEligibility) await page.route('**/api/eligibility/status', route => route.fulfill({ json: {
+      policyVersion: 'adult-2026-11-24', minimumAge: 18,
+      statement: 'I confirm that I am at least 18 years old.', market: 'US', geographicRestriction: false,
+      screened: true, blocked: false, acknowledged: true,
+    } }));
     const save = await coverPage(page);
     try {
       await runPage(page);

@@ -64,6 +64,7 @@ export default function Landing() {
           </ul>
         </section>
       </main>
+      <footer className="mx-auto max-w-6xl px-6 pb-8"><Link className="link text-sm" to="/privacy">Privacy and data requests</Link></footer>
     </div>
   );
 }

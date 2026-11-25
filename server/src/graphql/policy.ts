@@ -3,7 +3,7 @@ import { GraphQLError } from 'graphql';
 
 export interface Context {
   prisma: PrismaClient;
-  user: { id: string; email: string; emailVerified: boolean } | null;
+  user: { id: string; email: string; emailVerified: boolean; eligibilityAcknowledged: boolean } | null;
 }
 
 export function badInput(message: string): never {
@@ -19,6 +19,10 @@ export function nameInput(name: string) {
 export function authenticated({ user }: Context) {
   if (!user) throw new GraphQLError('Sign in to continue', { extensions: { code: 'UNAUTHENTICATED' } });
   if (!user.emailVerified) throw new GraphQLError('Verify your email to continue', { extensions: { code: 'FORBIDDEN' } });
+  // This boundary covers direct API callers and existing sessions, not just client routes.
+  if (user.eligibilityAcknowledged !== true) {
+    throw new GraphQLError('Acknowledge account eligibility to continue', { extensions: { code: 'ELIGIBILITY_REQUIRED' } });
+  }
   return user;
 }
 

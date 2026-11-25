@@ -4,7 +4,7 @@ The owner identified the RepairVantage image in their portfolio as the intended 
 
 ## Merge and release state
 
-[PR #3](https://github.com/davidmagbee/RepairVantage/pull/3) merged into `dev/engineering-harness` at `5d46f84` on 2026-11-18. Source tree equals UI tip `039ae0b`, whose Verify check passed. The public deployment was rechecked and still resolves to the prior `935418c` feature release. Merge is not deployment.
+[PR #3](https://github.com/davidmagbee/RepairVantage/pull/3) merged into integration at `5d46f84`; PR #5 subsequently consolidated `main`. The restored UI was deployed on 2026-11-24 from `472cd93`, including PR #6's scoped dependency patch. Fresh built-package desktop/mobile checks and 48 Node / 71 Chromium baseline tests passed. Captures remain synthetic, not production-account evidence. [Release evidence](DEPLOYMENT.md#release-2026-11-24--restored-ui).
 
 ## Restoration scope
 

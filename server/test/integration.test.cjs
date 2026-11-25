@@ -57,7 +57,8 @@ test('PostgreSQL owner, member, outsider, and anonymous GraphQL permissions', as
       data: { email: `${randomUUID()}@example.test`, name, emailVerified: true },
     });
     userIds.push(user.id);
-    return user;
+    // Resolver fixtures represent principals whose current declaration was already accepted.
+    return { ...user, eligibilityAcknowledged: true };
   }
 
   async function execute(query, variables, user = null) {

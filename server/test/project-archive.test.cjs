@@ -32,7 +32,8 @@ function setup(t) {
       data: { name, email: `${randomUUID()}@example.test`, emailVerified: true },
     });
     accounts.push(user.id);
-    return user;
+    // Resolver fixtures represent principals whose current declaration was already accepted.
+    return { ...user, eligibilityAcknowledged: true };
   }
 
   async function execute(query, variables, user) {

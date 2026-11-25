@@ -28,7 +28,8 @@ test('dashboard summarizes unarchived owned projects and current active-project 
   async function account(name) {
     const user = await prisma.user.create({ data: { name, email: `${randomUUID()}@example.test`, emailVerified: true } });
     userIds.push(user.id);
-    return user;
+    // Resolver fixtures represent principals whose current declaration was already accepted.
+    return { ...user, eligibilityAcknowledged: true };
   }
   async function execute(user) {
     const { body } = await apollo.executeOperation({ query }, { contextValue: { prisma, user } });

@@ -128,6 +128,29 @@ test('HTTP rejects unsupported methods, untrusted origins, and invalid JSON', as
   });
   assert.equal(unsupportedCharset.status, 415);
 
+  // Eligibility must reject malformed transport before parsing a declaration or issuing a screening cookie.
+  for (const path of ['/api/eligibility/screen', '/api/eligibility/acknowledgment']) {
+    const outside = await request(path, { method: 'POST', headers: badOrigin, body: '{}' });
+    assert.equal(outside.status, 403);
+    assert.deepEqual(await outside.json(), { error: 'Request origin is not allowed' });
+    const plain = await request(path, { method: 'POST', headers: { Origin: origin }, body: 'plain-text' });
+    assert.equal(plain.status, 415);
+    assert.deepEqual(await plain.json(), { error: 'Use application/json' });
+    for (const [body, code] of [['{', 400], [JSON.stringify({ padding: 'x'.repeat(2048) }), 413]]) {
+      const invalid = await request(path, { method: 'POST', headers, body });
+      assert.equal(invalid.status, code);
+      assert.deepEqual(await invalid.json(), { error: 'Invalid request body' });
+      assert.equal(invalid.headers.get('set-cookie'), null);
+    }
+  }
+  const emptyScreen = await request('/api/eligibility/screen', { method: 'POST', headers });
+  assert.equal(emptyScreen.status, 400);
+  assert.deepEqual(await emptyScreen.json(), { error: 'Enter a valid age' });
+  assert.equal(emptyScreen.headers.get('set-cookie'), null);
+  const emptyAcknowledgment = await request('/api/eligibility/acknowledgment', { method: 'POST', headers });
+  assert.equal(emptyAcknowledgment.status, 401);
+  assert.deepEqual(await emptyAcknowledgment.json(), { error: 'Sign in to continue' });
+
   const readiness = await request('/ready');
   assert.equal(readiness.status, 503);
   assert.deepEqual(await readiness.json(), { status: 'unavailable' });
@@ -240,7 +263,7 @@ async function startFaultTestApp(t, stopApollo = true) {
   return `http://127.0.0.1:${listener.address().port}`;
 }
 
-test('identity startup faults make provider discovery and session reads unavailable', async t => {
+test('identity startup faults make sign-in and eligibility unavailable without granting an adult proof', async t => {
   substituteIdentity(t, 'export function createIdentity() { throw new Error("Synthetic identity startup failure"); }');
   const log = t.mock.method(console, 'error', () => {});
   const base = await startFaultTestApp(t);
@@ -248,6 +271,23 @@ test('identity startup faults make provider discovery and session reads unavaila
     const response = await fetch(base + path);
     assert.equal(response.status, 503);
     assert.deepEqual(await response.json(), { error: 'Sign-in unavailable' });
+  }
+  const status = await fetch(base + '/api/eligibility/status');
+  assert.equal(status.status, 503);
+  assert.equal(status.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await status.json(), { error: 'Account eligibility unavailable' });
+  // An unavailable identity dependency cannot turn a valid adult declaration into authorization.
+  for (const [path, body] of [
+    ['/api/eligibility/screen', { age: 36 }],
+    ['/api/eligibility/acknowledgment', { accepted: true, policyVersion: 'adult-2026-11-24' }],
+  ]) {
+    const response = await fetch(base + path, {
+      method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await response.json(), { error: 'Account eligibility unavailable' });
+    assert.equal(response.headers.get('set-cookie'), null);
   }
   assert.ok(log.mock.calls.some(call => call.arguments[0] === 'Identity initialization failed'));
 });
