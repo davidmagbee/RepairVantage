@@ -3,7 +3,7 @@ import process from 'node:process';
 import { checkpointCoverage, expect, test } from './fixtures';
 
 test.skip(process.env.REAL_API !== '1', 'Requires the disposable Better Auth and PostgreSQL test server.');
-test.use({ realEligibility: true });
+test.use({ realEligibility: true, timezoneId: 'America/New_York' });
 
 test('an authenticated owner persists expenses and downloads matching report rows', async ({ page, request }) => {
   const email = `report-owner-${randomUUID()}@example.test`;
@@ -30,11 +30,19 @@ test('an authenticated owner persists expenses and downloads matching report row
   await page.getByLabel('Project name').fill(projectName);
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(page.getByRole('heading', { name: projectName })).toBeVisible();
-  // Exercise UTC date authoring through the real API before checking its Schedule projection.
+  // Author Eastern wall times while retaining UTC instants at the real API and export boundaries.
   await page.getByRole('button', { name: 'Edit dates', exact: true }).click();
-  await page.getByLabel('Project start (UTC)').fill('2026-11-14T09:15');
-  await page.getByLabel('Project end (UTC)').fill('2026-11-16T17:00');
+  await page.getByLabel('Project start').fill('2026-11-14T09:15');
+  await page.getByLabel('Project end').fill('2026-11-16T17:00');
+  const datesSaved = page.waitForResponse(response => response.request().method() === 'POST'
+    && new URL(response.url()).pathname === '/graphql'
+    && response.request().postDataJSON().operationName === 'UpdateProjectDates');
   await page.getByRole('button', { name: 'Save dates' }).click();
+  const datePayload = await (await datesSaved).json();
+  expect(datePayload.errors).toBeUndefined();
+  expect(datePayload.data.updateProject).toMatchObject({
+    startDate: '2026-11-14T14:15:00.000Z', endDate: '2026-11-16T22:00:00.000Z',
+  });
   await expect(page.getByRole('button', { name: 'Edit dates', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Schedule', exact: true }).click();
   await page.getByLabel('From date').fill('2026-11-14');
@@ -42,7 +50,7 @@ test('an authenticated owner persists expenses and downloads matching report row
   await page.getByRole('button', { name: 'Apply range' }).click();
   await page.getByRole('list', { name: 'Calendar dates' }).getByRole('link', { name: projectName, exact: true }).click();
   await page.getByRole('button', { name: 'Edit dates', exact: true }).click();
-  await expect(page.getByLabel('Project start (UTC)')).toHaveValue('2026-11-14T09:15');
+  await expect(page.getByLabel('Project start')).toHaveValue('2026-11-14T09:15');
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.getByRole('link', { name: 'Project report', exact: true }).click();
   await expect(page.getByRole('heading', { name: `${projectName} report` })).toBeVisible();

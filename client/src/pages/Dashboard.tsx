@@ -3,20 +3,14 @@ import { Link } from 'react-router-dom';
 import { privateOperation } from '../graphql/client';
 import { GET_DASHBOARD_DATA } from '../graphql/dashboard';
 import type { DashboardData } from '../graphql/dashboard';
+import { useTimeZone } from '../context/TimeZoneContext';
+import { formatDate, formatDateTime } from '../time/date-time';
 
 const statuses = ['PLANNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
 const activeStatuses = new Set(['PLANNED', 'IN_PROGRESS', 'ON_HOLD']);
 
 function label(status: string) {
   return status.toLowerCase().replace(/_/g, ' ');
-}
-
-function dateLabel(value: string, withTime = false) {
-  // Explicit UTC avoids shifting saved deadlines to the previous day in another browser timezone.
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric',
-    ...(withTime && { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }),
-  }).format(new Date(value));
 }
 
 function SummaryIcon({ kind }: { kind: 'projects' | 'active' | 'complete' }) {
@@ -32,6 +26,7 @@ function SummaryIcon({ kind }: { kind: 'projects' | 'active' | 'complete' }) {
 }
 
 export default function Dashboard() {
+  const { timeZone } = useTimeZone();
   const { data, loading, error, refetch } = useQuery<{ dashboardData: DashboardData }>(GET_DASHBOARD_DATA, {
     context: privateOperation,
     fetchPolicy: 'network-only',
@@ -59,7 +54,7 @@ export default function Dashboard() {
           </section>
           <section className="summary-card summary-card--orange" aria-label="Active Projects">
             <SummaryIcon kind="active" /><h2 className="summary-card__label">Active Projects</h2><p className="summary-card__value">{active}</p>
-            <div className="summary-card__detail"><span>Next deadline · UTC</span><span>{firstDeadline ? dateLabel(firstDeadline) : 'No upcoming deadlines'}</span><Link className="link" to="/projects/schedule">View schedule</Link></div>
+            <div className="summary-card__detail"><span>Next deadline</span><span>{firstDeadline ? formatDateTime(firstDeadline, timeZone) : 'No upcoming deadlines'}</span><Link className="link" to="/projects/schedule">View schedule</Link></div>
           </section>
           <section className="summary-card summary-card--teal" aria-label="Completed">
             <SummaryIcon kind="complete" /><h2 className="summary-card__label">Completed</h2><p className="summary-card__value">{dashboard.completedProjects}</p>
@@ -70,9 +65,9 @@ export default function Dashboard() {
         <div className="dashboard-columns">
           <section className="workspace-panel" aria-labelledby="deadlines-heading">
             <header className="panel-heading"><h2 id="deadlines-heading">Upcoming deadlines</h2><span className="badge badge-primary">{dashboard.upcomingDeadlines.length}</span></header>
-            <p className="eyebrow">Next 7 days · UTC</p>
+            <p className="eyebrow">Next 7 days · {timeZone.replace(/_/g, ' ')}</p>
             {dashboard.upcomingDeadlines.length === 0 ? <p>No upcoming deadlines in the next 7 days.</p> : <ul className="activity-list">
-              {dashboard.upcomingDeadlines.map(task => <li key={task.id}><Link className="dashboard-row" to={`/projects/${task.project.id}`}><span><strong>{task.name}</strong><span className="dashboard-row__meta">{task.project.name}</span></span>{task.dueDate && <time className="badge badge-primary" dateTime={task.dueDate}>{dateLabel(task.dueDate)}</time>}</Link></li>)}
+              {dashboard.upcomingDeadlines.map(task => <li key={task.id}><Link className="dashboard-row" to={`/projects/${task.project.id}`}><span><strong>{task.name}</strong><span className="dashboard-row__meta">{task.project.name}</span></span>{task.dueDate && <time className="badge badge-primary" dateTime={task.dueDate}>{formatDate(task.dueDate, timeZone)}</time>}</Link></li>)}
             </ul>}
             <Link className="btn btn-outline btn-sm mt-4" to="/projects/schedule">View calendar</Link>
           </section>
@@ -80,7 +75,7 @@ export default function Dashboard() {
             <header className="panel-heading"><h2 id="updates-heading">Recent project updates</h2></header>
             <p className="eyebrow">Latest saved project changes</p>
             {dashboard.recentProjects.length === 0 ? <p>No project updates yet.</p> : <ul className="activity-list">
-              {dashboard.recentProjects.map(project => <li key={project.id}><Link className="dashboard-row" to={`/projects/${project.id}`}><span><strong>{project.name}</strong><span className="dashboard-row__meta">Updated <time dateTime={project.updatedAt}>{dateLabel(project.updatedAt, true)}</time></span></span><span className="badge badge-outline capitalize">{label(project.status)}</span></Link></li>)}
+              {dashboard.recentProjects.map(project => <li key={project.id}><Link className="dashboard-row" to={`/projects/${project.id}`}><span><strong>{project.name}</strong><span className="dashboard-row__meta">Updated <time dateTime={project.updatedAt}>{formatDateTime(project.updatedAt, timeZone)}</time></span></span><span className="badge badge-outline capitalize">{label(project.status)}</span></Link></li>)}
             </ul>}
           </section>
         </div>

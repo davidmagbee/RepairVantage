@@ -120,7 +120,7 @@ test('an owner can edit, complete, and delete a task while preserving its untouc
   await page.getByRole('button', { name: 'Show tasks' }).click();
   const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
   await tasks.getByRole('button', { name: 'Edit Check the joists' }).click();
-  await expect(tasks.getByLabel('Due date and time (local, optional)')).toHaveValue('2026-11-06T15:45');
+  await expect(tasks.getByLabel('Due date and time (optional)')).toHaveValue('2026-11-06T15:45');
   await tasks.getByLabel('Task name').fill('Check and clean the joists');
   await tasks.getByLabel('Description (optional)').fill('');
   await tasks.getByLabel('Estimated hours (optional)').fill('');
@@ -171,7 +171,7 @@ test('task validation and request failures preserve recoverable input', async ({
   await tasks.getByRole('button', { name: 'Retry tasks' }).click();
   await tasks.getByRole('button', { name: 'Add task' }).click();
   const name = tasks.getByLabel('Task name');
-  const due = tasks.getByLabel('Due date and time (local, optional)');
+  const due = tasks.getByLabel('Due date and time (optional)');
   const create = tasks.getByRole('button', { name: 'Create task' });
   await name.fill('   ');
   await create.click();
@@ -180,7 +180,7 @@ test('task validation and request failures preserve recoverable input', async ({
   await name.fill('Reset the porch boards');
   await due.fill('2026-03-08T02:30');
   await create.click();
-  await expect(tasks.getByRole('alert')).toHaveText('Enter a valid local due date and time.');
+  await expect(tasks.getByRole('alert')).toContainText('does not exist');
   await due.fill('2026-03-08T03:30');
 
   rejectNextCreate();
@@ -217,4 +217,26 @@ test('a project member without assigned tasks sees an empty board without owner 
   const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
   await expect(tasks.getByText('No assigned tasks yet.')).toBeVisible();
   await expect(tasks.getByRole('button', { name: 'Add task' })).toHaveCount(0);
+});
+
+
+test('task editor keeps its original timezone while a repeated-hour deadline is resolved', async ({ page }) => {
+  await mockTasks(page);
+  await page.goto(projectPath);
+  await page.getByRole('button', { name: 'Show tasks' }).click();
+  const tasks = page.getByRole('region', { name: 'Tasks', exact: true });
+  await tasks.getByRole('button', { name: 'Add task' }).click();
+  await tasks.getByLabel('Task name').fill('Repeat-hour inspection');
+  await tasks.getByLabel('Due date and time (optional)', { exact: true }).fill('2026-11-01T01:30');
+  await page.getByLabel('Display time zone').selectOption('America/Los_Angeles');
+  await tasks.getByRole('button', { name: 'Create task' }).click();
+  await expect(tasks.getByRole('alert')).toContainText('occurs twice');
+  await tasks.getByLabel('Due date and time (optional) occurrence').selectOption('later');
+  await tasks.getByRole('button', { name: 'Create task' }).click();
+  await expect(tasks.locator('time[datetime="2026-11-01T06:30:00.000Z"]')).toBeVisible();
+  await tasks.getByRole('button', { name: 'Edit Repeat-hour inspection' }).click();
+  await expect(tasks.getByLabel('Due date and time (optional)', { exact: true })).toHaveValue('2026-10-31T23:30');
+  await tasks.getByLabel('Due date and time (optional)', { exact: true }).fill('');
+  await tasks.getByRole('button', { name: 'Save task' }).click();
+  await expect(tasks.locator('time')).toHaveCount(0);
 });

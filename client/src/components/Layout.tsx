@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authClient } from '../context/auth-client';
+import TimeZoneControl from './TimeZoneControl';
 
 export default function Layout() {
   const { user } = useAuth();
@@ -56,6 +57,7 @@ export default function Layout() {
         </div>
       </header>
       <main id="workspace-main" tabIndex={-1} className="workspace-content">
+        <TimeZoneControl />
         {signOutError && <p className="alert alert-error mb-4" role="alert">Could not sign out. Try again.</p>}
         <Outlet />
       </main>

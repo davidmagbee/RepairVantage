@@ -2,15 +2,13 @@ import { useMutation, useQuery } from '@apollo/client';
 import { useState, type FormEvent } from 'react';
 import { privateOperation } from '../graphql/client';
 import TaskBoard from './TaskBoard';
+import { useTimeZone } from '../context/TimeZoneContext';
+import { dateTimeInput, occurrenceForInstant, parseDateTimeInput } from '../time/date-time';
+import DateTimeInput, { type TimeOccurrence } from './DateTimeInput';
 import {
   CREATE_PROJECT_TASK, DELETE_PROJECT_TASK, GET_PROJECT_TASKS, SET_PROJECT_TASK_ASSIGNEE, UPDATE_PROJECT_TASK,
   taskStatusLabels, taskStatuses, type ProjectTaskMember, type Task, type TaskInput, type TaskStatus,
 } from '../graphql/tasks';
-
-function localDateTime(date: Date) {
-  // datetime-local expects a wall time without an offset.
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
 
 type TaskAction = { kind: 'create' } | { kind: 'edit' | 'assign' | 'delete'; task: Task };
 
@@ -20,8 +18,14 @@ function TaskEditor({ task, pending, onSave, onCancel }: {
   onSave: (input: TaskInput) => void;
   onCancel: () => void;
 }) {
+  const { timeZone } = useTimeZone();
+  // Pin draft interpretation while the global preference can change elsewhere in the workspace.
+  const [editZone] = useState(timeZone);
+  const savedDue = dateTimeInput(task?.dueDate, editZone);
+  const savedOccurrence = occurrenceForInstant(task?.dueDate, editZone);
+  const [due, setDue] = useState(savedDue);
+  const [occurrence, setOccurrence] = useState<TimeOccurrence>(savedOccurrence);
   const [validationError, setValidationError] = useState('');
-  const savedDue = task?.dueDate ? localDateTime(new Date(task.dueDate)) : '';
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,19 +37,12 @@ function TaskEditor({ task, pending, onSave, onCancel }: {
       setValidationError('Enter a task name.');
       return;
     }
-    const due = String(form.get('dueDate'));
     let dueDate = task?.dueDate ?? null;
     // The control displays minutes. Preserve the original seconds and offset if it is untouched.
-    if (due !== savedDue) {
-      dueDate = null;
-      if (due) {
-        const date = new Date(due);
-        if (!Number.isFinite(date.getTime()) || localDateTime(date) !== due) {
-          setValidationError('Enter a valid local due date and time.');
-          return;
-        }
-        dueDate = date.toISOString();
-      }
+    if (due !== savedDue || occurrence !== savedOccurrence) {
+      const parsed = parseDateTimeInput(due, editZone, occurrence);
+      if (!parsed.ok) { setValidationError(parsed.error); return; }
+      dueDate = parsed.value;
     }
     const description = String(form.get('description'));
     const savedDescription = (task?.description ?? '').replace(/\r\n?/g, '\n');
@@ -81,10 +78,8 @@ function TaskEditor({ task, pending, onSave, onCancel }: {
               {taskStatuses.map(status => <option key={status} value={status}>{taskStatusLabels[status]}</option>)}
             </select>
           </label>
-          <label className="form-control gap-1">
-            <span>Due date and time (local, optional)</span>
-            <input className="input input-bordered" type="datetime-local" name="dueDate" defaultValue={savedDue} max="9999-12-31T23:59" />
-          </label>
+          <div><DateTimeInput label="Due date and time (optional)" name="dueDate" value={due} timeZone={editZone} occurrence={occurrence} onChange={setDue} onOccurrence={setOccurrence} disabled={pending} />
+            <p className="mt-1 text-sm">Editing in {editZone.replace(/_/g, ' ')}</p></div>
         </div>
         <div className="flex flex-wrap gap-3">
           <label className="form-control gap-1">

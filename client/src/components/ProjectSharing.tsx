@@ -1,5 +1,7 @@
 import { useMutation, useQuery } from '@apollo/client';
 import { type FormEvent, useState } from 'react';
+import { useTimeZone } from '../context/TimeZoneContext';
+import { formatDate } from '../time/date-time';
 import {
   GET_PROJECT_SHARING,
   INVITE_TO_PROJECT,
@@ -40,6 +42,7 @@ function ShareLink({ label, url }: { label: string; url: string }) {
 
 /** Owner-only controls. An invitation and a publication are separate grants. */
 export default function ProjectSharing({ projectId, archived }: { projectId: string; archived: boolean }) {
+  const { timeZone } = useTimeZone();
   const { data, error, loading, refetch } = useQuery<ProjectSharingData>(GET_PROJECT_SHARING, {
     variables: { projectId },
     fetchPolicy: 'no-cache',
@@ -124,7 +127,7 @@ export default function ProjectSharing({ projectId, archived }: { projectId: str
           <ul aria-label="Pending invitations" className="divide-y divide-base-300">
             {data.projectInvites.map(item => (
               <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <span className="break-all">{item.email} · Expires {new Date(item.expiresAt).toLocaleDateString()}</span>
+                <span className="break-all">{item.email} · Expires {formatDate(item.expiresAt, timeZone)}</span>
                 <button type="button" className="btn btn-ghost btn-sm" disabled={pending} aria-label={`Revoke invitation for ${item.email}`} onClick={() => void change(async () => {
                   await revokeInvite({ variables: { projectId, id: item.id } });
                   setInvitation(current => current?.email === item.email ? null : current);

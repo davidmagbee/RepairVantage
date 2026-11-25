@@ -40,11 +40,12 @@ test('schedule returns only owned dated work, with allowed assignees and project
     { name: 'Undated', projectId: project.id },
     { name: 'Exclusive end', projectId: project.id, dueDate: date('05') },
   ] });
-  const query = `query ($from: DateTime!, $to: DateTime!) {
-    schedule(from: $from, to: $to) { id kind startAt endAt assigneeName tools { name quantity } }
+  const query = `query ($from: DateTime!, $to: DateTime!, $timeZone: String) {
+    schedule(from: $from, to: $to, timeZone: $timeZone) { id kind startAt endAt assigneeName tools { name quantity } }
   }`;
-  async function read(user, from = date('02'), to = date('05')) {
-    const { body } = await apollo.executeOperation({ query, variables: { from: from.toISOString(), to: to.toISOString() } }, {
+  async function read(user, from = date('02'), to = date('05'), timeZone) {
+    const variables = { from: from.toISOString(), to: to.toISOString(), ...(timeZone !== undefined && { timeZone }) };
+    const { body } = await apollo.executeOperation({ query, variables }, {
       contextValue: { prisma, user },
     });
     assert.equal(body.kind, 'single');
@@ -111,4 +112,30 @@ test('schedule returns only owned dated work, with allowed assignees and project
   assert.equal((await read(owner, date('02'), limit)).errors, undefined);
   assert.equal((await read(owner, date('02'), new Date(limit.getTime() + 1))).errors[0].extensions.code, 'BAD_USER_INPUT');
   assert.equal((await read(owner, date('02'), date('02'))).errors[0].extensions.code, 'BAD_USER_INPUT');
+
+  // Ninety-three New York calendar dates spanning the autumn clock change last an extra elapsed hour.
+  const fallStart = new Date('2026-08-01T04:00:00.000Z');
+  const fallEnd = new Date('2026-11-02T05:00:00.000Z');
+  assert.equal(fallEnd.getTime() - fallStart.getTime(), 93 * 86_400_000 + 3_600_000);
+  assert.equal((await read(owner, fallStart, fallEnd, 'America/New_York')).errors, undefined);
+  assert.equal((await read(owner, fallStart, fallEnd)).errors[0].extensions.code, 'BAD_USER_INPUT');
+  assert.equal((await read(owner, fallStart, fallEnd, null)).errors[0].extensions.code, 'BAD_USER_INPUT');
+  for (const end of [new Date('2026-11-03T05:00:00.000Z'), new Date(fallEnd.getTime() + 1)]) {
+    assert.equal((await read(owner, fallStart, end, 'America/New_York')).errors[0].extensions.code, 'BAD_USER_INPUT');
+  }
+  for (const [start, end, hours] of [
+    ['2026-03-08T05:00:00.000Z', '2026-03-09T04:00:00.000Z', 23],
+    ['2026-11-01T04:00:00.000Z', '2026-11-02T05:00:00.000Z', 25],
+  ]) {
+    const from = new Date(start);
+    const to = new Date(end);
+    assert.equal(to.getTime() - from.getTime(), hours * 3_600_000);
+    assert.equal((await read(owner, from, to, 'America/New_York')).errors, undefined);
+  }
+  for (const zone of ['', 'Mars/Olympus_Mons']) {
+    assert.equal((await read(owner, date('02'), date('05'), zone)).errors[0].extensions.code, 'BAD_USER_INPUT');
+  }
+  // Fixed-zone early-year inputs must use their actual calendar year, not JavaScript's Date.UTC shortcut.
+  assert.equal((await read(owner, new Date('0099-12-31T00:00:00.000Z'), new Date('0100-01-01T00:00:00.000Z'), 'UTC')).errors, undefined);
+  assert.equal((await read(null, fallStart, fallEnd, 'America/New_York')).errors[0].extensions.code, 'UNAUTHENTICATED');
 });

@@ -21,7 +21,8 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true, allowExportNames: ['useAuth'] },
+        // Provider modules expose their context hooks alongside the component, matching the existing auth pattern.
+        { allowConstantExport: true, allowExportNames: ['useAuth', 'useTimeZone'] },
       ],
     },
   },

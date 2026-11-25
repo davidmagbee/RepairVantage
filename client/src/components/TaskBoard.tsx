@@ -1,5 +1,7 @@
 import type { DragEvent } from 'react';
 import { taskStatusLabels, taskStatuses, type Task, type TaskStatus } from '../graphql/tasks';
+import { useTimeZone } from '../context/TimeZoneContext';
+import { formatDateTime } from '../time/date-time';
 
 const taskDragType = 'application/x-repairvantage-task';
 
@@ -20,6 +22,7 @@ export default function TaskBoard({ tasks, canManage, readOnly, busy, onEdit, on
   onDelete: (task: Task) => void;
   onMove: (task: Task, status: TaskStatus) => void;
 }) {
+  const { timeZone } = useTimeZone();
   const canMove = !readOnly && !busy;
 
   function dropTask(event: DragEvent<HTMLElement>, status: TaskStatus) {
@@ -57,8 +60,8 @@ export default function TaskBoard({ tasks, canManage, readOnly, busy, onEdit, on
                 >
                   <h4 className="break-words font-bold">{task.name}</h4>
                   {task.description && <p className="whitespace-pre-wrap break-words">{task.description}</p>}
-                  {task.dueDate && <p>Due <time dateTime={task.dueDate}>{new Date(task.dueDate).toLocaleString()}</time></p>}
-                  {task.completedDate && <p>Completed <time dateTime={task.completedDate}>{new Date(task.completedDate).toLocaleString()}</time></p>}
+                  {task.dueDate && <p>Due <time dateTime={task.dueDate}>{formatDateTime(task.dueDate, timeZone)}</time></p>}
+                  {task.completedDate && <p>Completed <time dateTime={task.completedDate}>{formatDateTime(task.completedDate, timeZone)}</time></p>}
                   <p>{task.assignee ? `Assigned to ${task.assignee.name}` : 'Unassigned'}</p>
                   {!readOnly && (
                     <div className="flex flex-wrap gap-2">
