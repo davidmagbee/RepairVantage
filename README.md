@@ -1,6 +1,6 @@
 # RepairVantage
 
-RepairVantage gives repair project owners a private workspace for tracking status and sharing updates. A visitor can read the landing page and open an unlisted Showcase link. Workspace access requires Google or a verified email code.
+RepairVantage gives repair project owners a private workspace for tracking status and sharing updates. A visitor can read the landing page and open an unlisted Showcase link. Workspace access requires verified sign-in and current 18+ eligibility acknowledgment.
 
 [Open RepairVantage](https://repairvantage.davidmagbee.com/)
 
@@ -12,9 +12,9 @@ Click anywhere on an owned or shared project card to open its details. Keyboard 
 
 ## Project status
 
-**Live release · 2026-11-13.** The owner workspace includes archive and restore, confirmed deletion, a task board with member assignment, owner inventory with stock shortfalls, UTC project-date editing and scheduling views, and USD expense/hour reports with CSV export and printing. [Release `935418c`](docs/DEPLOYMENT.md#release-2026-11-13) is deployed at the canonical URL. The owner confirmed the unchanged production sign-in and account-linking flows; new feature walkthroughs remain owner QA. The [roadmap](docs/ROADMAP.md) tracks those checks and remaining dependency, calendar-event, conflict, reporting, and UX work. The [implementation guide](docs/IMPLEMENTATION.md) translates the original [Cursor plan](.cursorrules) into acceptance criteria.
+**Historical foundation · 2026-11-13.** The owner workspace includes archive and restore, confirmed deletion, a task board with member assignment, owner inventory with stock shortfalls, UTC project-date editing and scheduling views, and USD expense/hour reports with CSV export and printing. [Release `935418c`](docs/DEPLOYMENT.md#release-2026-11-13) was deployed at the canonical URL. The owner confirmed that release's unchanged production sign-in and account-linking flows; new feature walkthroughs remain owner QA. The [roadmap](docs/ROADMAP.md) tracks those checks and remaining dependency, calendar-event, conflict, reporting, and UX work. The [implementation guide](docs/IMPLEMENTATION.md) translates the original [Cursor plan](.cursorrules) into acceptance criteria.
 
-The portfolio-reference UI is deployed from `472cd93`, including the scoped dependency patch from [PR #6](https://github.com/davidmagbee/RepairVantage/pull/6). [Consolidation PR #5](https://github.com/davidmagbee/RepairVantage/pull/5) made `main` the source of truth; future feature PRs target it. The new [18+ acknowledgment and privacy workflow](docs/ACCOUNT-ELIGIBILITY.md) is a separate feature slice, not part of that UI release. Start a new chat from the [current handoff](docs/HANDOFF.md). [Design reference](docs/UI-REFERENCE.md).
+Production now includes the restored portfolio-reference UI and [18+ acknowledgment/privacy workflow](docs/ACCOUNT-ELIGIBILITY.md). [PR #7](https://github.com/davidmagbee/RepairVantage/pull/7) merged at `f1cc1d0`; its tested source `ce17774` was deployed on 2026-11-25 with all nine migrations applied. Future feature PRs target `main`. [Release evidence](docs/DEPLOYMENT.md#release-2026-11-25--account-eligibility) · [Current handoff](docs/HANDOFF.md) · [Design reference](docs/UI-REFERENCE.md).
 
 The frontend is React and Vite. The same-origin backend is Express, Apollo GraphQL, Better Auth, Prisma 7, and PostgreSQL.
 
