@@ -15,7 +15,7 @@ Open `http://localhost:5173`. Vite proxies `/api/auth`, `/api/eligibility` and `
 
 ## Browser icon
 
-The standalone [favicon](public/favicon.svg) uses a black house outline and wrench with an orange-handled screwdriver, without a window. A white rounded backplate preserves contrast on dark browser tabs. `index.html` references this local SVG; no icon package, font or external request is needed. The current PR includes the asset; production changes only after release. Hard-refresh or open a fresh tab when reviewing a cached browser icon.
+The standalone [favicon](public/favicon.svg) uses a black house outline and wrench with an orange-handled screwdriver, without a window. A white rounded backplate preserves contrast on dark browser tabs. `index.html` references this local SVG; no icon package, font or external request is needed. It shipped in the [2026-11-25 local-time release](../docs/DEPLOYMENT.md#release-2026-11-25--local-time-layout-and-favicon). Hard-refresh or open a fresh tab when reviewing a cached browser icon.
 
 ## Account eligibility and privacy
 
@@ -27,7 +27,7 @@ Open an owned or shared project by clicking anywhere on its card, or focus the c
 
 ## Time-zone preference
 
-The current development branch adds **Time zone** above the workspace. This feature is not deployed yet. The initial preference uses the device's IANA time zone; unavailable or invalid detection falls back to **Eastern Time · New York** (`America/New_York`, including daylight saving). Choose another zone manually or select **Use device time zone** to replace the preference with the current device zone. The choice persists in this browser; it is not synced to the account. Restricted browser storage still permits a choice for the current session.
+Use **Time zone** above the workspace to choose how dates display and edit. The initial preference uses the device's IANA time zone; unavailable or invalid detection falls back to **Eastern Time · New York** (`America/New_York`, including daylight saving). Choose another zone manually or select **Use device time zone** to replace the preference with the current device zone. The choice persists in this browser; it is not synced to the account. Restricted browser storage still permits a choice for the current session.
 
 Project dates, task deadlines/completion, dashboard dates, comments, invitation expiry and report dates use the selected zone. Stored instants and CSV expense timestamps remain UTC. An open project-date or task editor keeps the zone shown when it opened, even if the workspace preference changes. Close and reopen the editor to use the new zone.
 
@@ -58,7 +58,7 @@ To permanently delete an active project, select **Delete project permanently** a
 
 ## Project tasks
 
-On Project Details, select **Show tasks**. Owners see all project tasks and can add, edit, delete, and assign them to existing project members. Choose **Unassigned** to clear an assignment. Members see only tasks assigned to them and can edit those tasks on active projects. To change status, drag a task to a column or open **Edit** and select a status with the keyboard or touch. In the current development branch, the task deadline uses the selected [time-zone preference](#time-zone-preference). The board is read-only while the project is archived.
+On Project Details, select **Show tasks**. Owners see all project tasks and can add, edit, delete, and assign them to existing project members. Choose **Unassigned** to clear an assignment. Members see only tasks assigned to them and can edit those tasks on active projects. To change status, drag a task to a column or open **Edit** and select a status with the keyboard or touch. The task deadline uses the selected [time-zone preference](#time-zone-preference). The board is read-only while the project is archived.
 
 ## Project reports
 
@@ -72,9 +72,9 @@ Open **Inventory** in workspace navigation to add or edit parts and tools and th
 
 ## Project schedule dates
 
-On active owned projects, select **Edit dates**. In the current development branch, enter optional **Project start** and **Project end** values in the editor's displayed time zone. **Save dates** updates only changed endpoints; clearing an endpoint removes it. The end cannot precede the start. Failed saves retain the draft; **Cancel** leaves stored dates intact. Members and archived projects show dates without editing controls. The deployed release still uses UTC project-date inputs until this feature is released.
+On active owned projects, select **Edit dates**. Enter optional **Project start** and **Project end** values in the editor's displayed time zone. **Save dates** updates only changed endpoints; clearing an endpoint removes it. The end cannot precede the start. Failed saves retain the draft; **Cancel** leaves stored dates intact. Members and archived projects show dates without editing controls.
 
-Open **Schedule** and choose an inclusive **From date** / **Through date** range of up to 93 calendar days. On this branch, range boundaries and calendar/timeline placement follow the selected zone, including 23- and 25-hour daylight-saving days. The calendar places an item on its first visible date; the timeline shows its visible span. Unchanged endpoints retain their original precision even though the editor displays minutes.
+Open **Schedule** and choose an inclusive **From date** / **Through date** range of up to 93 calendar days. Range boundaries and calendar/timeline placement follow the selected zone, including 23- and 25-hour daylight-saving days. The calendar places an item on its first visible date; the timeline shows its visible span. Unchanged endpoints retain their original precision even though the editor displays minutes.
 
 The Project Details overview puts identity/status above adjacent Schedule and Project settings areas on wide screens. Status and priority retain separate save controls. Narrow screens collapse the areas; detail editing, report and archive actions remain grouped below them.
 
@@ -82,4 +82,4 @@ The Project Details overview puts identity/status above adjacent Schedule and Pr
 
 The restored workspace matches the portfolio screenshot's indigo navigation, summary cards, dashboard panels, and light styling. It reached `main` and production; the old design branch is retired. Open **Dashboard** at `/projects/dashboard`; sign-in destinations and the default project list remain unchanged. Project search and status filters operate on the account-scoped owned and shared lists.
 
-Dashboard totals exclude archived projects and shared projects. Active means Planned, In progress, or On hold. Upcoming deadlines are unfinished tasks in active projects over the next seven days, capped at five. This branch displays dates in the selected zone; the rolling deadline window is unchanged. **Recent project updates** shows saved project timestamps, not a historical activity log. [Design reference](../docs/UI-REFERENCE.md).
+Dashboard totals exclude archived projects and shared projects. Active means Planned, In progress, or On hold. Upcoming deadlines are unfinished tasks in active projects over the next seven days, capped at five. Dates display in the selected zone; the rolling deadline window is unchanged. **Recent project updates** shows saved project timestamps, not a historical activity log. [Design reference](../docs/UI-REFERENCE.md).
